@@ -49,12 +49,18 @@ namespace Navertica.SharePoint.Extensions
             return ContainsFieldGuid(fieldCollection, new[] { guid });
         }
 
+        /// <summary>
+        /// Checks whether the field collection contains all given fields' internal names
+        /// </summary>
+        /// <param name="fieldCollection"></param>
+        /// <param name="intFieldNames"></param>
+        /// <returns></returns>
         public static bool ContainsFieldIntName(this SPFieldCollection fieldCollection, IEnumerable<string> intFieldNames)
         {
             if (fieldCollection == null) throw new ArgumentNullException("fieldCollection");
             if (intFieldNames == null) throw new ArgumentNullException("intFieldNames");
 
-            //TODO pomoci LINQu
+
             foreach (string fieldname in intFieldNames)
             {
                 try
@@ -171,6 +177,12 @@ namespace Navertica.SharePoint.Extensions
             return fieldType.Contains("lookup") && fieldType != "extendedlookup"; // NAVERTICA ExtendedLookup is needed for backwards compatibility, and is not a lookup
         }
 
+        /// <summary>
+        /// Requires functionality that checks a list's property bag when drawing form fields. This function sets the property bag 
+        /// info so that the field can be rendered as non editable.
+        /// </summary>
+        /// <param name="field"></param>
+        /// <param name="nonEditable"></param>
         public static void SetNonEditable(this SPField field, bool nonEditable = true)
         {
             if (field == null) throw new ArgumentNullException("field");

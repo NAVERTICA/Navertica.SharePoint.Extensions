@@ -7,6 +7,13 @@ namespace Navertica.SharePoint.Extensions
 {
     public static class SPSecurableObjectExtensions
     {
+        /// <summary>
+        /// Copy rights from one securable object to another
+        /// </summary>
+        /// <param name="securableObject"></param>
+        /// <param name="toSecurableObject"></param>
+        /// <param name="deleteOldRights"></param>
+        /// <returns></returns>
         public static bool CopyRights(this SPSecurableObject securableObject, SPSecurableObject toSecurableObject, bool deleteOldRights)
         {
             if (securableObject == null) throw new ArgumentNullException("securableObject");
@@ -44,7 +51,7 @@ namespace Navertica.SharePoint.Extensions
         }
 
         /// <summary>
-        /// Gets information about securableObject
+        /// Gets url and (after hash #) also the type of securableObject as string, or empty string
         /// </summary>
         /// <param name="securableObject"></param>
         /// <returns></returns>
@@ -55,11 +62,11 @@ namespace Navertica.SharePoint.Extensions
             switch (securableObject.GetType().Name)
             {
                 case "SPListItem":
-                    return "Securable object : SPListItem - " + ( (SPListItem) securableObject ).FormUrlDisplay();
+                    return ((SPListItem)securableObject).FormUrlDisplay() + "#SPListItem";
                 case "SPList":
-                    return "Securable object : SPList - " + ( (SPList) securableObject ).DefaultViewUrl;
+                    return ((SPList)securableObject).DefaultViewUrl + "#SPList";
                 case "SPWeb":
-                    return "Securable object : SPWeb - " + ( (SPWeb) securableObject ).Url;
+                    return ((SPWeb)securableObject).Url + "#SPWeb";
                 default:
                     return "";
             }
@@ -105,6 +112,12 @@ namespace Navertica.SharePoint.Extensions
             return "[" + results.JoinStrings(", ") + "]";
         }
 
+        /// <summary>
+        /// Get SPRoleDefinition for given SPRoleType of securable object
+        /// </summary>
+        /// <param name="securableObject"></param>
+        /// <param name="roleType"></param>
+        /// <returns></returns>
         public static SPRoleDefinition GetRoleDefinition(this SPSecurableObject securableObject, SPRoleType roleType)
         {
             if (securableObject == null) throw new ArgumentNullException("securableObject");
@@ -122,7 +135,7 @@ namespace Navertica.SharePoint.Extensions
         }
 
         /// <summary>
-        /// Gets o roledefinition by name
+        /// Gets SPRoleDefinition by name
         /// </summary>
         /// <param name="securableObject"></param>
         /// <param name="roleDefinitonName"></param>
@@ -157,6 +170,11 @@ namespace Navertica.SharePoint.Extensions
             }
         }
 
+        /// <summary>
+        /// Get the SPWeb to which this object belongs
+        /// </summary>
+        /// <param name="securableObject"></param>
+        /// <returns></returns>
         public static SPWeb GetWeb(this SPSecurableObject securableObject)
         {
             if (securableObject == null) throw new ArgumentNullException("securableObject");
@@ -216,7 +234,7 @@ namespace Navertica.SharePoint.Extensions
         #region Remove
 
         /// <summary>
-        /// Smazat aktuální role assignments
+        /// Removes current Role Assignments
         /// </summary>
         /// <param name="securableObject"></param>
         public static bool RemoveRights(this SPSecurableObject securableObject)
@@ -245,7 +263,7 @@ namespace Navertica.SharePoint.Extensions
         }
 
         /// <summary>
-        /// Smaze roli pro dany objekt. Nefunguje na SPRoleType.Guest
+        /// Removes given role definition
         /// </summary>
         /// <param name="securableObject"> </param>
         /// <param name="roleDefinition"></param>
@@ -287,6 +305,12 @@ namespace Navertica.SharePoint.Extensions
             }
         }
 
+        /// <summary>
+        /// Removes given role type
+        /// </summary>
+        /// <param name="securableObject"></param>
+        /// <param name="roleType"></param>
+        /// <returns></returns>
         public static bool RemoveRights(this SPSecurableObject securableObject, SPRoleType roleType)
         {
             if (securableObject == null) throw new ArgumentNullException("securableObject");
@@ -295,6 +319,12 @@ namespace Navertica.SharePoint.Extensions
             return RemoveRights(securableObject, roleDefinition);
         }
 
+        /// <summary>
+        /// Removes rights for given principal (user/group)
+        /// </summary>
+        /// <param name="securableObject"></param>
+        /// <param name="principal"></param>
+        /// <returns></returns>
         public static bool RemoveRights(this SPSecurableObject securableObject, SPPrincipal principal)
         {
             if (securableObject == null) throw new ArgumentNullException("securableObject");
@@ -303,6 +333,12 @@ namespace Navertica.SharePoint.Extensions
             return RemoveRights(securableObject, new[] { principal });
         }
 
+        /// <summary>
+        /// Removes rights for all given principals (users/groups)
+        /// </summary>
+        /// <param name="securableObject"></param>
+        /// <param name="principals"></param>
+        /// <returns></returns>
         public static bool RemoveRights(this SPSecurableObject securableObject, IEnumerable<SPPrincipal> principals)
         {
             if (securableObject == null) throw new ArgumentNullException("securableObject");
@@ -341,6 +377,14 @@ namespace Navertica.SharePoint.Extensions
 
         #region Set
 
+        /// <summary>
+        /// Will give rights (given by role definition) to a given principal (user/group)
+        /// </summary>
+        /// <param name="securableObject"></param>
+        /// <param name="principal"></param>
+        /// <param name="roleDefinition"></param>
+        /// <param name="deleteCurrent"></param>
+        /// <returns></returns>
         public static bool SetRights(this SPSecurableObject securableObject, SPPrincipal principal, SPRoleDefinition roleDefinition, bool deleteCurrent = false)
         {
             if (securableObject == null) throw new ArgumentNullException("securableObject");
@@ -350,6 +394,14 @@ namespace Navertica.SharePoint.Extensions
             return SetRights(securableObject, new[] { principal }, roleDefinition, deleteCurrent);
         }
 
+        /// <summary>
+        /// Will give rights (given by role type) to a given principal (user/group)
+        /// </summary>
+        /// <param name="securableObject"></param>
+        /// <param name="principal"></param>
+        /// <param name="roleType"></param>
+        /// <param name="deleteCurrent"></param>
+        /// <returns></returns>
         public static bool SetRights(this SPSecurableObject securableObject, SPPrincipal principal, SPRoleType roleType, bool deleteCurrent = false)
         {
             if (securableObject == null) throw new ArgumentNullException("securableObject");
@@ -359,6 +411,14 @@ namespace Navertica.SharePoint.Extensions
             return SetRights(securableObject, new[] { principal }, roleDefinition, deleteCurrent);
         }
 
+        /// <summary>
+        /// Will give rights (given by a role type) to a given set of principals (users/groups)
+        /// </summary>
+        /// <param name="securableObject"></param>
+        /// <param name="principals"></param>
+        /// <param name="roleType"></param>
+        /// <param name="deleteCurrent"></param>
+        /// <returns></returns>
         public static bool SetRights(this SPSecurableObject securableObject, IEnumerable<SPPrincipal> principals, SPRoleType roleType, bool deleteCurrent = false)
         {
             if (securableObject == null) throw new ArgumentNullException("securableObject");
@@ -369,13 +429,13 @@ namespace Navertica.SharePoint.Extensions
         }
 
         /// <summary>
-        /// Nastaví uživateli individuální přístupová práva pro položku, bude fungovat pod jakýmkoliv uživatelem - tzn. pozor
+        /// Will give rights (given by role definition) to a given set of principals (users/groups)
         /// </summary>
-        /// <param name="securableObject">položka, ke které má uživatel získat práva</param>
-        /// <param name="principals">uživatel/sp skupina</param>
-        /// <param name="roleDefinition"> práva, která má uživatel získat</param>
-        /// <param name="deleteCurrent"> </param>
-        /// <returns>Vrací false, když něco selže, chyba bude v logu</returns>
+        /// <param name="securableObject">object to set rights to</param>
+        /// <param name="principals">users or groups</param>
+        /// <param name="roleDefinition">the rights to set</param>
+        /// <param name="deleteCurrent">remove all other rights on the object</param>
+        /// <returns>returns true if successful, null or false in case of error</returns>
         public static bool SetRights(this SPSecurableObject securableObject, IEnumerable<SPPrincipal> principals, SPRoleDefinition roleDefinition, bool deleteCurrent = false)
         {
             if (securableObject == null) throw new ArgumentNullException("securableObject");

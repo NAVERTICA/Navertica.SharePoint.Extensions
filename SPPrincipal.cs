@@ -11,6 +11,12 @@ namespace Navertica.SharePoint.Extensions
 {
     public static class SPPrincipalExtensions
     {
+        /// <summary>
+        /// Checks, if the current user is enabled in Active Directory
+        /// </summary>
+        /// <param name="user"></param>
+        /// <param name="de"></param>
+        /// <returns></returns>
         public static bool? Enabled(this SPUser user, DirectoryEntry de)
         {
             if (user == null) throw new ArgumentNullException("user");
@@ -44,7 +50,7 @@ namespace Navertica.SharePoint.Extensions
         }
 
         /// <summary>
-        /// Returns guids of webs which user can access
+        /// Returns guids of all the webs this user can access
         /// </summary>
         /// <param name="user"></param>
         /// <returns></returns>
@@ -62,36 +68,13 @@ namespace Navertica.SharePoint.Extensions
 
             return guids;
 
-            /*
-             //puvodni kod asi relikt 2007
-            try
-            {
-                string userLogin = user.LoginName;
-
-                user.ParentWeb.Site.RunElevated(delegate(SPSite elevatedSite)
-                {
-                    foreach (SPWeb web in elevatedSite.AllWebs)
-                    {
-                        //SPUser user = web.GetSPUser(userLogin);
-                        if (user.IsSiteAdmin || web.DoesUserHavePermissions(user.LoginName, SPBasePermissions.Open))
-                        {
-                            guids.Add(web.ID);
-                        }
-                        web.Dispose();
-                    }
-                    return null;
-                });
-
-                return guids;
-            }
-            catch (Exception exc)
-            {
-                Tools.Log("FindWebsForUser\n" + exc);
-                return null;
-            }
-             * */
         }
 
+        /// <summary>
+        /// Returns integer IDs of all the principals (users/groups)
+        /// </summary>
+        /// <param name="principals"></param>
+        /// <returns></returns>
         public static List<int> GetIds(this IEnumerable<SPPrincipal> principals)
         {
             if (principals == null) throw new ArgumentNullException("principals");
@@ -99,15 +82,9 @@ namespace Navertica.SharePoint.Extensions
             return principals.Select(principal => principal.ID).ToList();
         }
 
-        public static List<int> GetIds(this IEnumerable<SPUser> users)
-        {
-            if (users == null) throw new ArgumentNullException("users");
-
-            return users.Select(user => user.ID).ToList();
-        }
 
         /// <summary>
-        /// LoginName without Claims
+        /// LoginName in lowercase, without Claims prefix
         /// </summary>
         /// <param name="principal"></param>
         /// <returns></returns>
@@ -118,6 +95,11 @@ namespace Navertica.SharePoint.Extensions
             return ( principal.LoginName.Contains('|') ? principal.LoginName.Split('|')[1] : principal.LoginName ).ToLowerInvariant();
         }
 
+        /// <summary>
+        /// Returns LoginNames in lowercase, without Claims prefix, for all the principals (users/groups)
+        /// </summary>
+        /// <param name="principals"></param>
+        /// <returns></returns>
         public static List<string> GetLogins(this IEnumerable<SPPrincipal> principals)
         {
             if (principals == null) throw new ArgumentNullException("principals");
@@ -125,13 +107,13 @@ namespace Navertica.SharePoint.Extensions
             return principals.Select(principal => principal.LoginNameNormalized()).ToList();
         }
 
-        public static List<string> GetLogins(this IEnumerable<SPUser> users)
-        {
-            if (users == null) throw new ArgumentNullException("users");
 
-            return users.Cast<SPPrincipal>().GetLogins();
-        }
-
+        /// <summary>
+        /// Tries to load this user's manager from ActiveDirectory
+        /// </summary>
+        /// <param name="user"></param>
+        /// <param name="de"></param>
+        /// <returns></returns>
         public static SPUser GetManager(this SPUser user, DirectoryEntry de)
         {
             if (user == null) throw new ArgumentNullException("user");
@@ -143,7 +125,7 @@ namespace Navertica.SharePoint.Extensions
             if (value == null) return null;
 
             string[] props = value.ToString().Split(',');
-            string managerName = props.Where(s => s.ToLowerInvariant().StartsWith("cn")).FirstOrDefault();
+            string managerName = props.FirstOrDefault(s => s.ToLowerInvariant().StartsWith("cn"));
 
             if (managerName == null) return null;
 
@@ -153,6 +135,11 @@ namespace Navertica.SharePoint.Extensions
             return manager;
         }
 
+        /// <summary>
+        /// Returns the names for all the principals (users/groups)
+        /// </summary>
+        /// <param name="principals"></param>
+        /// <returns></returns>
         public static List<string> GetNames(this IEnumerable<SPPrincipal> principals)
         {
             if (principals == null) throw new ArgumentNullException("principals");
@@ -160,27 +147,24 @@ namespace Navertica.SharePoint.Extensions
             return principals.Select(principal => principal.Name).ToList();
         }
 
-        public static List<string> GetNames(this IEnumerable<SPUser> users)
-        {
-            if (users == null) throw new ArgumentNullException("users");
 
-            return users.Select(user => user.Name).ToList();
-        }
-
+        /// <summary>
+        /// Returns the SPFieldUserValue to be saved in a SPFieldUser for the current principal (user/group)
+        /// </summary>
+        /// <param name="principal"></param>
+        /// <returns></returns>
         public static SPFieldUserValue GetSPFieldUserValue(this SPPrincipal principal)
         {
             if (principal == null) throw new ArgumentNullException("principal");
 
             return new SPFieldUserValue(principal.ParentWeb, GetSPFieldUserValueFormat(principal));
-        }
+        }      
 
-        public static SPFieldUserValue GetSPFieldUserValue(this SPUser user)
-        {
-            if (user == null) throw new ArgumentNullException("user");
-
-            return GetSPFieldUserValue((SPPrincipal) user);
-        }
-
+        /// <summary>
+        /// Returns the text format "ID;#Name" for the current principal (user/group)
+        /// </summary>
+        /// <param name="principal"></param>
+        /// <returns></returns>
         public static string GetSPFieldUserValueFormat(this SPPrincipal principal)
         {
             if (principal == null) throw new ArgumentNullException("principal");
@@ -188,13 +172,11 @@ namespace Navertica.SharePoint.Extensions
             return principal.ID + ";#" + principal.Name;
         }
 
-        public static string GetSPFieldUserValueFormat(this SPUser user)
-        {
-            if (user == null) throw new ArgumentNullException("user");
-
-            return user.ID + ";#" + user.Name;
-        }
-
+        /// <summary>
+        /// Returns the SPFieldUserValueCollection to be saved in a SPFieldUser for the principals (users/groups)
+        /// </summary>
+        /// <param name="principals"></param>
+        /// <returns></returns>
         public static SPFieldUserValueCollection GetSPFieldUserValueCollection(this IEnumerable<SPPrincipal> principals)
         {
             if (principals == null) throw new ArgumentNullException("principals");
@@ -209,15 +191,8 @@ namespace Navertica.SharePoint.Extensions
             return result;
         }
 
-        public static SPFieldUserValueCollection GetSPFieldUserValueCollection(this IEnumerable<SPUser> users)
-        {
-            if (users == null) throw new ArgumentNullException("users");
-
-            return GetSPFieldUserValueCollection(users.Cast<SPPrincipal>());
-        }
-
         /// <summary>
-        /// Get all users from SPGroup
+        /// Get all users from an SPGroup, expands Active Directory groups.
         /// </summary>
         /// <param name="group"></param>
         /// <returns>List of SPUsers or empty List. Never returns null.</returns>
@@ -233,7 +208,7 @@ namespace Navertica.SharePoint.Extensions
                 return new List<SPUser>(spUsers);
             }
 
-            if (!group.CanCurrentUserViewMembership) //pokud nemuze musime pod zvysenymi pravy
+            if (!group.CanCurrentUserViewMembership) // if not possible, use elevated rights
             {
                 List<int> ids = new List<int>();
                 group.ParentWeb.RunElevated(delegate(SPWeb elevWeb)
@@ -249,19 +224,24 @@ namespace Navertica.SharePoint.Extensions
                 spUsers = GetUsersFromCollection(group.Users);
             }
 
-            spUsers.RemoveAll(user => user.ID == group.ParentWeb.Site.SystemAccount.ID); // siteadmin je v každé skupině, ale to my nechceme
+            spUsers.RemoveAll(user => user.ID == group.ParentWeb.Site.SystemAccount.ID); // siteadmin is in every group by default, we don't want this
 
             HttpRuntime.Cache.Insert(cacheKey, spUsers, null, DateTime.Now.AddMinutes(30), Cache.NoSlidingExpiration);
 
             return new List<SPUser>(spUsers);
         }
 
+        /// <summary>
+        /// Returns all the users in given collection - expands groups, including Active Directory groups.
+        /// </summary>
+        /// <param name="userCollection"></param>
+        /// <returns></returns>
         private static List<SPUser> GetUsersFromCollection(SPUserCollection userCollection)
         {
             List<SPUser> spUsers = new List<SPUser>();
             foreach (SPUser user in userCollection)
             {
-                if (user.IsDomainGroup) // domenova skupina v sharepointove skupine
+                if (user.IsDomainGroup) // domain group inside a SharePoint group
                 {
                     spUsers.AddRange(user.ParentWeb.GetSPUsersFromADGroup(user.LoginName));
                 }
@@ -275,7 +255,7 @@ namespace Navertica.SharePoint.Extensions
         }
 
         /// <summary>
-        /// Get the property for user from AD
+        /// Load the property of given name for given user from Active Directory
         /// </summary>
         /// <param name="user"></param>
         /// <param name="de"></param>
@@ -296,7 +276,7 @@ namespace Navertica.SharePoint.Extensions
         }
 
         /// <summary>
-        /// Gets properties for user from AD. Keys are in LowerCase format
+        /// Loads the properties from Active Directory into dictionary. Keys in dictionary will be lowercase.
         /// </summary>
         /// <param name="user"></param>
         /// <param name="de"></param>
@@ -355,94 +335,7 @@ namespace Navertica.SharePoint.Extensions
             dict.Sort();
             return dict;
         }
-
-        #region LDAP Functions
-
-        /*
-        private static string GetLdapFilter(string name, bool isDomainGroup)
-        {
-            if (isDomainGroup)
-            {
-                if (name.Contains('\\'))
-                {
-                    name = name.Split('\\')[1];
-                }
-                return "(&(objectCategory=group)(|(cn=" + name + ")(sAMAccountName=" + name + ")))";
-            }
-            else
-            {
-                //Pro nacitani props uz nemusime filtrovat pouze enabled users - usery nacitame pomoci SPUtility
-                return "(&(&(objectCategory=user)(|(cn=" + name + ")(sAMAccountName=" + name + "))))";
-                //return "(&(&(objectCategory=user)(|(cn=" + name + ")(sAMAccountName=" + name + ")))(!(userAccountControl:1.2.840.113556.1.4.803:=2)))";
-            }
-        }
-         * */
-
-        /*
-        private static List<SearchResultCollection> LDAP_FindUsersForGroup(this SPUser adGroup, DirectoryEntry de)
-        {
-            if (adGroup == null) throw new ArgumentNullException("adGroup");
-            if (de == null) throw new ArgumentNullException("de");
-            if (!IsValid(de)) throw new DirectoryEntryException(de);
-
-            string groupADName = adGroup.LoginName.Split('\\')[1];
-            return LDAP_FindUsersForGroup(de, groupADName, new List<string>());
-        }
-        */
-
-        /*
-        private static List<SearchResultCollection> LDAP_FindUsersForGroup(DirectoryEntry de, string groupname, ICollection<string> recursionProtection)
-        {
-            string[] propertiesToLoad = { "sAMAccountName", "distinguishedName" };
-
-            SearchResultCollection group = LDAP_Find(de, GetLdapFilter(groupname, true), propertiesToLoad);
-            List<SearchResultCollection> results = new List<SearchResultCollection>();
-
-            if (group.Count == 0)
-            {
-                //Tools.Log("LDAP_FindUsersForGroup - skupina " + groupname + " nenalezena\n\n" + Tools.CurrentStackTrace());
-                return null;
-            }
-            if (group.Count > 1)
-            {
-                //Tools.Log("LDAP_FindUsersForGroup - skupina " + groupname + " nalezena vic nez jednou\n\n" + Tools.CurrentStackTrace());
-                return null;
-            }
-
-            string groupDistingName = group[0].Properties["distinguishedName"][0].ToString();
-
-            // najit vnorene skupiny a rekurzivne se do nich pustit
-            // TODO hlidat nekonecnou rekurzi, jestli se to v AD muze stat
-
-            foreach (SearchResult grp in LDAP_Find(de, "(&(objectCategory=group)(memberOf=" + groupDistingName + "))", propertiesToLoad))
-            {
-                string insideGroupName = grp.Properties["distinguishedName"][0].ToString();
-                string accName = grp.Properties["sAMAccountName"][0].ToString();
-
-                if (recursionProtection.Contains(insideGroupName)) continue;
-
-                recursionProtection.Add(insideGroupName);
-
-                List<SearchResultCollection> resultUsers = LDAP_FindUsersForGroup(de, accName, recursionProtection);
-                if (resultUsers != null)
-                {
-                    results.AddRange(resultUsers);
-                }
-            }
-            // cast s userAccountControl vybira ucty, ktere nejsou disabled
-            results.Add(LDAP_Find(de, "(&(&(objectCategory=user)(memberOf=" + groupDistingName + "))(!(userAccountControl:1.2.840.113556.1.4.803:=2)))", propertiesToLoad));
-
-            return results;
-        }
-        */
-
-        /*
-        private static SearchResultCollection LDAP_FindUsers(DirectoryEntry de, string filter)
-        {
-            return de.LDAP_Find(filter, new[] { "sAMAccountName", "distinguishedName", "cn", "displayName", "Manager", "userAccountControl", "department" });
-        }
-        */
-
+        
         private static SearchResultCollection LDAP_Find(DirectoryEntry de, string filter, IEnumerable<string> properties)
         {
             string ldapString = "-";
@@ -461,9 +354,7 @@ namespace Navertica.SharePoint.Extensions
             {
                 throw new Exception("LDAP_Find problem\n" + ldapString + "\n" + ex + "\n");
             }
-        }
-
-        #endregion
+        }    
 
         public static bool IsValid(this DirectoryEntry de)
         {
@@ -486,6 +377,11 @@ namespace Navertica.SharePoint.Extensions
             }
         }
 
+        /// <summary>
+        ///  Get this user's preferred language LCID
+        /// </summary>
+        /// <param name="user"></param>
+        /// <returns></returns>
         public static int GetPreferredLanguage(this SPUser user)
         {
             var preflangs = user.LanguageSettings.PreferredDisplayLanguages;
