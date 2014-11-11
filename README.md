@@ -12,15 +12,21 @@ We tried to solve many of the common tasks routinely required of SharePoint prog
 with convenient extensions on SharePoint objects, 
 and take care of some of the many possible inconsistencies in the API behind the scenes.
 
-Opening a web or list? 
+For example, opening a web or list? 
 ```csharp
 SPWeb web = site.OpenW(Url_Name_Guid_AsString, false /* don't throw exception */);
 if (web == null) logError("Couldn't open web " + UrlOrNameOrGuidAsString);
 SPList list = web.OpenList(Url_Name_InternalName_Guid_AsString, false);
 if (list == null) logError("Couldn't open list " + UrlOrNameOrInternalNameOrGuidAsString);
 ```
+Similarly, we make it easier to 
+- copy or move items in both document libraries and custom lists - including metadata, attachments...
+- look up content types by both name and ID
+- check if fields with internal name exist in a list or content type
+- find lists by type or content type
+- ...
 
-TODO - Get and Set extensions, to read (and write, where possible) normalized values of SPListItems, SPListItemVersions,
+(Not yet included) Get and Set extensions, to read (and write, where possible) normalized values of SPListItems, SPListItemVersions,
 SPItemEventProperties (for Event Receivers with AfterProperties). All the returned values look the same,
 whichever object they come from, and writing the values also works the same independent of whether the
 underlying object is an SPListItem or AfterProperties of an item in receiver.
