@@ -48,7 +48,7 @@ var resultingNumberFieldValuesCollection =
 
 Process all items in a lookup? 
 ```csharp
-var titleCollection = item.ProcessLookupItems("LookupInternalName", item => item["Title"]);
+var titleCollection = item.ProcessLookupItems("LookupInternalName", itemInLookup => itemInLookup["Title"]);
 ```
 
 Query Tools - strongly typed CAML query helper classes
