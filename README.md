@@ -4,6 +4,7 @@ NAVERTICA SharePoint Extensions (SSOM)
 A selection of extension methods for SharePoint 2013 server-side object model.
 
 
+
 Feedback welcome.
 
 Less scaffolding
@@ -105,4 +106,8 @@ SPQuery query = new SPQuery
 SPListItemCollection col = list.GetItems(query);
 ```
 
-
+Copyright (C) 2014 NAVERTICA a.s. http://www.navertica.com 
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.

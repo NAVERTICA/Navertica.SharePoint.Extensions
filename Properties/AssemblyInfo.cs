@@ -7,7 +7,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyTitle("Navertica.SharePoint.Extensions")]
 [assembly: AssemblyDescription("Server-side object model extensions")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("NAVERTICA a.s.")]
+[assembly: AssemblyCompany("NAVERTICA a.s. http://www.navertica.com ")]
 [assembly: AssemblyProduct("Navertica.SharePoint.Extensions")]
 [assembly: AssemblyCopyright("Copyright NAVERTICA © 2014")]
 [assembly: AssemblyTrademark("")]
