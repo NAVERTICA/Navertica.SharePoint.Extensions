@@ -806,6 +806,7 @@ namespace Navertica.SharePoint.Extensions
 
         #region OpenList
 
+
         /// <summary>
         /// Tries to open list with given guid - mostly for usage in scripts
         /// </summary>
@@ -821,7 +822,7 @@ namespace Navertica.SharePoint.Extensions
             if (listGuid == null) throw new ArgumentNullException("listGuid");
             if (listGuid.IsEmpty()) throw new ArgumentException("Guid is Empty");
 
-            return OpenList(web, listGuid.ToString(), throwExc);
+            return OpenListFromGuid(web, listGuid, throwExc);
         }
 
         /// <summary>
@@ -835,142 +836,83 @@ namespace Navertica.SharePoint.Extensions
         /// <exception cref="SPListAccesDeniedException"></exception>
         /// <exception cref="SPListNotFoundException"></exception>
         public static SPList OpenList(this SPWeb web, string listIdentification, bool throwExc = false)
-            // TODO - rozdelit vnitrek na 3 public funkce, ktere ale nebudou extension - OpenListFromGuid, OpenListFromUrl, OpenListFromName
-            // a  ty pak testovat
         {
-            //if (web == null) throw new ArgumentNullException("web"); //zatim pocitame ze web muze byt null, ale nemelo by to tak byt
+            if (web == null) throw new ArgumentNullException("web");
             if (listIdentification == null) throw new ArgumentNullException("listIdentification");
+
+            string cacheKey = "OpenlistDict_" + web.Site.ID + web.ID;
 
             using (new SPMonitoredScope("OpenList - " + listIdentification))
             {
-                Guid listGuid = Guid.Empty;
-                string listText = listIdentification.Trim();
-                listText = SPListExtensions.ListInternalName(listText);
-
-                Dictionary<string, string> result = (Dictionary<string, string>) HttpRuntime.Cache.Get("OpenlistDict_" + web.Site.ID + web.ID);
-                if (result != null && !web.Site.InTimerJob())
-                {
-                    if (result.ContainsKey(listText)) listText = result[listText];
-                }
-
-                if (listText == "") return null;
+                Guid listGuid;
 
                 #region Open By Guid
 
-                try
+                if (Guid.TryParse(listIdentification, out listGuid))
                 {
-                    listGuid = new Guid(listText);
-                }
-                // ReSharper disable once EmptyGeneralCatchClause
-                catch {}
-
-                if (!listGuid.IsEmpty())
-                {
-                    try
-                    {
-                        bool originalCatchValue = SPSecurity.CatchAccessDeniedException;
-                        SPSecurity.CatchAccessDeniedException = false;
-                        SPList list = web.Lists[listGuid];
-                        SPSecurity.CatchAccessDeniedException = originalCatchValue;
-                        return list;
-                    }
-                    catch (UnauthorizedAccessException)
-                    {
-                        if (throwExc)
-                        {
-                            throw new SPListAccesDeniedException(listGuid, web);
-                        }
-                    }
-                    // ReSharper disable once EmptyGeneralCatchClause
-                    catch (Exception) {}
-
-                    if (throwExc)
-                    {
-                        throw new SPListNotFoundException(listIdentification, web);
-                    }
-
-                    return null;
+                    return OpenListFromGuid(web, listGuid, throwExc);
                 }
 
                 #endregion
 
-                try
-                {
-                    SPList list = web.Lists[listText]; //nacte podle display Name
-                    SaveLoadedSPList(listText, web, list);
-                    return list;
-                }
-                // ReSharper disable once EmptyGeneralCatchClause
-                catch {}
+                #region Open by InternalName
 
-                SPList listByUrl = OpenListFromUrl(web, listText);
-                if (listByUrl != null)
+                string listInternalName = SPListExtensions.ListInternalName(listIdentification.Trim());
+
+                Dictionary<string, Guid> result = (Dictionary<string, Guid>)HttpRuntime.Cache.Get(cacheKey);
+
+                if (result == null)
                 {
-                    SaveLoadedSPList(listText, web, listByUrl);
-                    return listByUrl;
+                    //Nacteme vse pro celej web
+                    web.RunElevated(delegate(SPWeb elevatedWeb)
+                    {
+                        result = elevatedWeb.Lists.Cast<SPList>().ToDictionary(d => d.InternalName(), d => d.ID);
+                        HttpRuntime.Cache.Insert(cacheKey, result, null, DateTime.Now.AddDays(1), Cache.NoSlidingExpiration, CacheItemPriority.Normal, null);
+                        return null;
+                    });
                 }
 
-                bool exist = (bool) web.RunElevated(delegate(SPWeb elevatedWeb)
+                if (result.ContainsKey(listInternalName))
                 {
-                    SPList listByUrlElev = OpenListFromUrl(elevatedWeb, listText);
-                    bool res = listByUrlElev != null;
-                    SaveLoadedSPList(listText, web, listByUrlElev);
-                    return res;
-                });
+                    return OpenListFromGuid(web, result[listInternalName], throwExc);
+                }
+
+                #endregion
 
                 if (!throwExc) return null;
-                if (exist) throw new SPListAccesDeniedException(listText, web);
-                throw new SPListNotFoundException(listText, web);
+                throw new SPListNotFoundException(listIdentification, web);
             }
         }
 
-        private static SPList OpenListFromUrl(SPWeb web, string listInternalName)
+        public static SPList OpenListFromGuid(SPWeb web, Guid listGuid, bool throwExc)
         {
-            string listUrl = ( web.ServerRelativeUrl + "/Lists/" + listInternalName + "/" ).Replace("//", "/");
-            string formUrl = ( web.ServerRelativeUrl + "/" + listInternalName + "/Forms/" ).Replace("//", "/");
-            string plainUrl = ( web.ServerRelativeUrl + "/" + listInternalName + "/" ).Replace("//", "/");
-
-            SPList list = null;
             try
             {
-                list = web.GetList(listUrl);
+                bool originalCatchValue = SPSecurity.CatchAccessDeniedException;
+                SPSecurity.CatchAccessDeniedException = false;
+
+                SPList list = web.Lists[listGuid];
+
+                SPSecurity.CatchAccessDeniedException = originalCatchValue;
+                return list;
             }
-            catch
+            catch (UnauthorizedAccessException)
             {
-                try
+                if (throwExc)
                 {
-                    list = web.GetList(formUrl);
+                    throw new SPListAccesDeniedException(listGuid, web);
                 }
-                catch
-                {
-                    try
-                    {
-                        list = web.GetList(plainUrl);
-                    }
-                    // ReSharper disable once EmptyGeneralCatchClause
-                    catch {}
-                }
+            }
+            catch (Exception) { }
+
+            if (throwExc)
+            {
+                throw new SPListNotFoundException(listGuid, web);
             }
 
-            return list;
+            return null;
         }
 
-        private static void SaveLoadedSPList(string listText, SPWeb web, SPList list)
-        {
-            string cacheKey = "OpenlistDict_" + web.Site.ID + web.ID;
-            Dictionary<string, string> result = (Dictionary<string, string>) HttpRuntime.Cache.Get(cacheKey) ?? new Dictionary<string, string>();
-            if (!result.ContainsKey(listText)) //muze se stat ze v jinym threadu to tam zapise driv
-            {
-                //muze dochazet k IndexOutOfRangeException z nespecifickeho duvodu
-                try
-                {
-                    result.Add(listText, list != null ? list.ID.ToString() : "00000000-0000-0000-0000-000000000001");
-                    HttpRuntime.Cache.Insert(cacheKey, result, null, DateTime.Now.AddDays(1), Cache.NoSlidingExpiration, CacheItemPriority.Normal, null);
-                }
-                // ReSharper disable once EmptyGeneralCatchClause
-                catch {}
-            }
-        }
 
         #endregion
 
