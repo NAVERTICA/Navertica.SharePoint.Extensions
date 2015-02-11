@@ -1,17 +1,24 @@
 NAVERTICA SharePoint Extensions (SSOM)
 ======================================
 
-A selection of extension methods for SharePoint 2013 server-side object model.
+A selection of extension methods for SharePoint 2013 server-side object model, trying to make SharePoint development less of a pain.
 
 
 
-Feedback welcome.
+Feedback, ideas, patches welcome. Further functionalities are upcoming, as well as some other toys and tools of ours.
 
-Less scaffolding
-=================
-We tried to solve many of the common tasks routinely required of SharePoint programmers once and for all
-with convenient extensions on SharePoint objects, 
-and take care of some of the many possible inconsistencies in the API behind the scenes.
+Less scaffolding, less coupling
+==========================
+We tried to solve many of the common tasks routinely required of SharePoint programmers once and for all with convenient extensions 
+on SharePoint objects, and take care of some of the many possible inconsistencies in the API behind the scenes.
+
+We also tried to solve some of the coupling issues - you can't just pass anything SPRequest related (SPListItem etc.) to another
+thread, so we're often working with our own classes like WebListId and WebListItemId, which contain the IDs of the required objects
+and method to transparently access them, without being bound to specific SPRequests.
+
+Another, much more daring, goal, which we have not reached by far, was to basically replace calls to SharePoint API with calls to our own extensions and 
+thus decouple our business code from SharePoint API, which should make it easier to replace the underlying SSOM with
+something else in the future.
 
 For example, opening a web or list? 
 ```csharp
