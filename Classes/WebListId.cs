@@ -13,6 +13,7 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.  */
+
 using System;
 using System.Collections.Generic;
 using System.Web;
@@ -35,14 +36,12 @@ namespace Navertica.SharePoint
 
         public bool IsValid
         {
-            get { return !(WebGuid == Guid.Empty || ListGuid == Guid.Empty); }
+            get { return !( WebGuid == Guid.Empty || ListGuid == Guid.Empty ); }
         }
 
         #region Constructors
 
-        public WebListId()
-        {
-        }
+        public WebListId() {}
 
         public WebListId(Guid web, Guid list)
         {
@@ -63,8 +62,8 @@ namespace Navertica.SharePoint
 
             const string cacheName = "WebListIdDictionary";
             Dictionary<string, WebListId> webListIdDict =
-                (((Dictionary<string, WebListId>) HttpRuntime.Cache.Get(cacheName)) ??
-                 new Dictionary<string, WebListId>());
+                ( ( (Dictionary<string, WebListId>) HttpRuntime.Cache.Get(cacheName) ) ??
+                  new Dictionary<string, WebListId>() );
 
             if (webListIdDict.ContainsKey(webListId))
             {
@@ -127,8 +126,7 @@ namespace Navertica.SharePoint
                 if (IsValid)
                 {
                     webListIdDict.Add(webListId, new WebListId(WebGuid, ListGuid));
-                    HttpRuntime.Cache.Insert(cacheName, webListIdDict, null, DateTime.Now.AddDays(1),
-                        Cache.NoSlidingExpiration, CacheItemPriority.Normal, null);
+                    HttpRuntime.Cache.Insert(cacheName, webListIdDict, null, DateTime.Now.AddDays(1), Cache.NoSlidingExpiration, CacheItemPriority.Normal, null);
                 }
             }
         }
@@ -225,14 +223,13 @@ namespace Navertica.SharePoint
         /// <exception cref="SPWebNotFoundException"></exception>
         /// <exception cref="SPListAccesDeniedException"></exception>
         /// <exception cref="SPListNotFoundException"></exception>
-        public ICollection<object> ProcessItems(SPSite site, Func<SPListItem, object> func, Q que = null,
-            int rowLimit = -1)
+        public ICollection<object> ProcessItems(SPSite site, Func<SPListItem, object> func, Q que = null, int rowLimit = -1)
         {
             if (site == null) throw new ArgumentNullException("site");
             if (func == null) throw new ArgumentNullException("func");
             if (!IsValid) throw new SPException("this instance of object is not valid: " + InvalidMessage);
 
-            return ProcessItems(site, func, (que != null ? que.ToString() : ""), rowLimit);
+            return ProcessItems(site, func, ( que != null ? que.ToString() : "" ), rowLimit);
         }
 
         /// <summary>
@@ -247,8 +244,7 @@ namespace Navertica.SharePoint
         /// <exception cref="SPWebNotFoundException"></exception>
         /// <exception cref="SPListAccesDeniedException"></exception>
         /// <exception cref="SPListNotFoundException"></exception>
-        public ICollection<object> ProcessItems(SPSite site, Func<SPListItem, object> func, string querystr = "",
-            int rowLimit = -1)
+        public ICollection<object> ProcessItems(SPSite site, Func<SPListItem, object> func, string querystr, int rowLimit = -1)
         {
             if (site == null) throw new ArgumentNullException("site");
             if (func == null) throw new ArgumentNullException("func");
@@ -275,14 +271,13 @@ namespace Navertica.SharePoint
         /// <returns></returns>
         /// <exception cref="SPWebNotFoundException"></exception>
         /// <exception cref="SPListNotFoundException"></exception>
-        public ICollection<object> ProcessItemsElevated(SPSite site, Func<SPListItem, object> func, Q que = null,
-            int rowLimit = -1)
+        public ICollection<object> ProcessItemsElevated(SPSite site, Func<SPListItem, object> func, Q que = null, int rowLimit = -1)
         {
             if (site == null) throw new ArgumentNullException("site");
             if (func == null) throw new ArgumentNullException("func");
             if (!IsValid) throw new SPException("this instance of object is not valid: " + InvalidMessage);
 
-            return ProcessItemsElevated(site, func, (que != null ? que.ToString() : ""), rowLimit);
+            return ProcessItemsElevated(site, func, ( que != null ? que.ToString() : "" ), rowLimit);
         }
 
         /// <summary>
@@ -326,6 +321,4 @@ namespace Navertica.SharePoint
                 : InvalidMessage;
         }
     }
-
-
 }

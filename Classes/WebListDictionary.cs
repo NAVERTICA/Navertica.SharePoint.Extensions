@@ -13,6 +13,7 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.  */
+
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -24,7 +25,6 @@ using Navertica.SharePoint.Extensions;
 // ReSharper disable once CheckNamespace
 namespace Navertica.SharePoint
 {
-  
     /// <summary>
     ///     For passing SPRequest-independent identification of several lists across webs. Grouping the lists by web lets us
     ///     open the SPWeb just once for all the lists.
@@ -38,9 +38,7 @@ namespace Navertica.SharePoint
 
         #region Constructors
 
-        public WebListDictionary()
-        {
-        }
+        public WebListDictionary() {}
 
         public WebListDictionary(string webListIds)
         {
@@ -381,13 +379,12 @@ namespace Navertica.SharePoint
             return (ICollection<object>) site.RunElevated(elevatedSite => ProcessLists(elevatedSite, func));
         }
 
-        public ICollection<object> ProcessItems(SPSite site, Func<SPListItem, object> func, Q que = null,
-            int rowLimit = -1)
+        public ICollection<object> ProcessItems(SPSite site, Func<SPListItem, object> func, Q que = null, int rowLimit = -1)
         {
             if (site == null) throw new ArgumentNullException("site");
             if (func == null) throw new ArgumentNullException("func");
 
-            return ProcessItems(site, func, (que != null ? que.ToString() : ""), rowLimit);
+            return ProcessItems(site, func, ( que != null ? que.ToString() : "" ), rowLimit);
         }
 
         /// <summary>
@@ -398,8 +395,7 @@ namespace Navertica.SharePoint
         /// <param name="func"></param>
         /// <param name="rowLimit"></param>
         /// <returns></returns>
-        public ICollection<object> ProcessItems(SPSite site, Func<SPListItem, object> func, string querystr = "",
-            int rowLimit = -1)
+        public ICollection<object> ProcessItems(SPSite site, Func<SPListItem, object> func, string querystr = "", int rowLimit = -1)
         {
             if (site == null) throw new ArgumentNullException("site");
             if (func == null) throw new ArgumentNullException("func");
@@ -446,16 +442,12 @@ namespace Navertica.SharePoint
         /// <param name="func"></param>
         /// <param name="rowLimit"></param>
         /// <returns></returns>
-        public ICollection<object> ProcessItemsElevated(SPSite site, Func<SPListItem, object> func, Q que = null,
-            int rowLimit = -1)
+        public ICollection<object> ProcessItemsElevated(SPSite site, Func<SPListItem, object> func, Q que = null, int rowLimit = -1)
         {
             if (site == null) throw new ArgumentNullException("site");
             if (func == null) throw new ArgumentNullException("func");
 
-            return
-                (ICollection<object>)
-                    site.RunElevated(
-                        elevatedSite => ProcessItems(elevatedSite, func, (que != null ? que.ToString() : ""), rowLimit));
+            return (ICollection<object>) site.RunElevated(elevatedSite => ProcessItems(elevatedSite, func, ( que != null ? que.ToString() : "" ), rowLimit));
         }
 
         /// <summary>
@@ -466,15 +458,12 @@ namespace Navertica.SharePoint
         /// <param name="func"></param>
         /// <param name="rowLimit"></param>
         /// <returns></returns>
-        public ICollection<object> ProcessItemsElevated(SPSite site, Func<SPListItem, object> func, string querystr = "",
-            int rowLimit = -1)
+        public ICollection<object> ProcessItemsElevated(SPSite site, Func<SPListItem, object> func, string querystr = "", int rowLimit = -1)
         {
             if (site == null) throw new ArgumentNullException("site");
             if (func == null) throw new ArgumentNullException("func");
 
-            return
-                (ICollection<object>)
-                    site.RunElevated(elevatedSite => ProcessItems(elevatedSite, func, querystr, rowLimit));
+            return (ICollection<object>) site.RunElevated(elevatedSite => ProcessItems(elevatedSite, func, querystr, rowLimit));
         }
 
         #endregion
@@ -489,6 +478,7 @@ namespace Navertica.SharePoint
                 result.Add(list.AbsoluteUrl());
                 return null;
             });
+
             return result;
         }
 
@@ -510,5 +500,4 @@ namespace Navertica.SharePoint
             return res;
         }
     }
-
 }

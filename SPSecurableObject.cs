@@ -13,6 +13,7 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.  */
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -54,6 +55,7 @@ namespace Navertica.SharePoint.Extensions
 
                         return null;
                     });
+
                     return null;
                 });
 
@@ -146,6 +148,7 @@ namespace Navertica.SharePoint.Extensions
                 case "SPWeb":
                     return ( (SPWeb) securableObject ).RoleDefinitions.GetByType(roleType);
             }
+
             return null;
         }
 
@@ -203,6 +206,7 @@ namespace Navertica.SharePoint.Extensions
                 case "SPWeb":
                     return ( (SPWeb) securableObject );
             }
+
             return null;
         }
 
@@ -243,6 +247,7 @@ namespace Navertica.SharePoint.Extensions
                     });
                     break;
             }
+
             return result;
         }
 
@@ -266,6 +271,7 @@ namespace Navertica.SharePoint.Extensions
                     {
                         securableObjectElevated.RoleAssignments.Remove(i);
                     }
+
                     return null;
                 });
 
@@ -331,6 +337,7 @@ namespace Navertica.SharePoint.Extensions
             if (securableObject == null) throw new ArgumentNullException("securableObject");
 
             SPRoleDefinition roleDefinition = securableObject.GetRoleDefinition(roleType);
+
             return RemoveRights(securableObject, roleDefinition);
         }
 
@@ -387,6 +394,7 @@ namespace Navertica.SharePoint.Extensions
                 return false;
             }
         }
+
 
         #endregion
 
@@ -456,7 +464,7 @@ namespace Navertica.SharePoint.Extensions
             if (securableObject == null) throw new ArgumentNullException("securableObject");
             if (principals == null) throw new ArgumentNullException("principals");
             if (roleDefinition == null) throw new ArgumentNullException("roleDefinition");
-            
+
             var spPrincipals = principals as IList<SPPrincipal> ?? principals.ToList();
             if (!spPrincipals.Any()) return false;
 

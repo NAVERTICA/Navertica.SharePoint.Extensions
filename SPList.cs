@@ -13,6 +13,7 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.  */
+
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -94,8 +95,7 @@ namespace Navertica.SharePoint.Extensions
                 {
                     SPContentType ctp = list.ContentTypes.GetContentType(kvp.Value.ToString());
                     if (ctp == null)
-                        throw new Exception(string.Format("List {0} missing content type name {1}", list.DefaultViewUrl,
-                            kvp.Value));
+                        throw new Exception(string.Format("List {0} missing content type name {1}", list.DefaultViewUrl, kvp.Value));
                     result["ContentType"] = ctp;
                 }
                 string fieldType = list.Fields.GetFieldByInternalName(kvp.Key).TypeAsString;
@@ -264,6 +264,7 @@ namespace Navertica.SharePoint.Extensions
                 list.ParentWeb.RunWithAllowUnsafeUpdates(() => list.ContentTypes.Add(newContentType) /*Can throw UnauthorizedAccessException, SPException, ...*/);
                 return true;
             }
+
             return false;
         }
 
@@ -331,6 +332,7 @@ namespace Navertica.SharePoint.Extensions
                     return false;
                 }
             }
+
             return true;
         }
 
@@ -376,7 +378,7 @@ namespace Navertica.SharePoint.Extensions
         #region Urls
 
         /// <summary>
-        /// Gets url of DisplayForm for given itemID
+        /// Gets url of DisplayForm for given itemId
         /// </summary>
         /// <param name="list"></param>
         /// <param name="itemId"></param>
@@ -441,6 +443,7 @@ namespace Navertica.SharePoint.Extensions
             {
                 query = new Q(QJoin.And, query, andQuery);
             }
+
             return GetItemsQuery(list, query, rowLimit);
         }
 
@@ -985,21 +988,6 @@ namespace Navertica.SharePoint.Extensions
 
             if (list.ParentWeb.InSandbox() || list.ParentWeb.CurrentUser.IsSiteAdmin) //Don't runeleveted if user is admin or already run with admin rights
             {
-                /*
-                using (SPSite unelevatedSite = new SPSite(siteGuid, list.ParentWeb.CurrentUser.UserToken))
-                {
-                    unelevatedSite.AllowUnsafeUpdates = true;
-                    using (SPWeb unelevatedWeb = unelevatedSite.OpenW(webGuid))
-                    {
-                        unelevatedWeb.AllowUnsafeUpdates = true;
-                        SPList unelevatedList = unelevatedWeb.Lists[listGuid];
-                        result = func(unelevatedList);
-                        unelevatedWeb.AllowUnsafeUpdates = false;
-                    }
-                    unelevatedSite.AllowUnsafeUpdates = false;
-                }
-                 * */
-
                 bool origSiteunsafe = list.ParentWeb.Site.AllowUnsafeUpdates;
                 list.ParentWeb.Site.AllowUnsafeUpdates = true;
                 list.ParentWeb.RunWithAllowUnsafeUpdates(delegate { result = func(list); });

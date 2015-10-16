@@ -39,8 +39,7 @@ namespace Navertica.SharePoint.Extensions
                 // in case identification is ContentTypeId
                 return Contains(contentTypeCollection, new SPContentTypeId(identification.Trim()));
             }
-                // when identification doesn't look like SPContentTypeId
-            catch (ArgumentException) {}
+            catch (ArgumentException) {} // when identification doesn't look like SPContentTypeId
 
             // in case identification is name
             List<string> list = contentTypeCollection.Cast<SPContentType>().Select(ct => ct.Name).ToList();

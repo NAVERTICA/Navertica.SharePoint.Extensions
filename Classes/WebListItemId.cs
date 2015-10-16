@@ -13,6 +13,7 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.  */
+
 using System;
 using Microsoft.SharePoint;
 using Microsoft.SharePoint.Utilities;
@@ -21,7 +22,6 @@ using Navertica.SharePoint.Extensions;
 // ReSharper disable once CheckNamespace
 namespace Navertica.SharePoint
 {
-   
     /// <summary>
     ///     For passing and handling SPRequest-independent identification of list items
     /// </summary>
@@ -34,14 +34,12 @@ namespace Navertica.SharePoint
 
         public bool IsValid
         {
-            get { return !(WebGuid == Guid.Empty || ListGuid == Guid.Empty || Item <= 0); }
+            get { return !( WebGuid == Guid.Empty || ListGuid == Guid.Empty || Item <= 0 ); }
         }
 
         #region Constructors
 
-        public WebListItemId()
-        {
-        }
+        public WebListItemId() {}
 
         /// <summary>
         ///     Listurl#ItemId or webGuid:listGuid:ItemId
@@ -165,8 +163,7 @@ namespace Navertica.SharePoint
             {
                 WebGuid = Guid.Empty;
                 ListGuid = Guid.Empty;
-                InvalidMessage = "Could not load WebListItemId from '" + webGuid + "' and '" + listGuid + "' and '" +
-                                 item + "'";
+                InvalidMessage = "Could not load WebListItemId from '" + webGuid + "' and '" + listGuid + "' and '" + item + "'";
             }
         }
 
@@ -256,7 +253,4 @@ namespace Navertica.SharePoint
                 : InvalidMessage;
         }
     }
-
-  
-
 }

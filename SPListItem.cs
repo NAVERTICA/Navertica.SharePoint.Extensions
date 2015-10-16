@@ -189,7 +189,7 @@ namespace Navertica.SharePoint.Extensions
                         if (targetList.ContainsFieldIntName(field.InternalName)
                             && !targetList.Fields.GetFieldByInternalName(field.InternalName).ReadOnlyField
                             && item[field.InternalName] != null
-                            && !field.InternalName.EqualAny(new[] {"Attachments", "Order", "FileLeafRef", "MetaInfo"}))
+                            && !field.InternalName.EqualAny(new[] { "Attachments", "Order", "FileLeafRef", "MetaInfo" }))
                         {
                             // versioned text field
                             if (field.TypeAsString == "Note" && field.SchemaXml.Contains(@"AppendOnly=""TRUE"""))
@@ -311,7 +311,7 @@ namespace Navertica.SharePoint.Extensions
 
                 #endregion
 
-                if (itemHasToBeUpdated) 
+                if (itemHasToBeUpdated)
                 {
                     try
                     {
@@ -371,8 +371,7 @@ namespace Navertica.SharePoint.Extensions
         /// <param name="numberOfLastVersions">Number of versions to keep</param>
         public static void DeleteVersionsExceptLast(this SPListItem item, int numberOfLastVersions)
         {
-            List<int> ids =
-                item.Versions.Cast<SPListItemVersion>().Select(v => v.VersionId).OrderByDescending(v => v).ToList();
+            List<int> ids = item.Versions.Cast<SPListItemVersion>().Select(v => v.VersionId).OrderByDescending(v => v).ToList();
 
             if (ids.Count > numberOfLastVersions)
             {
@@ -411,11 +410,11 @@ namespace Navertica.SharePoint.Extensions
         /// <param name="newVersion"></param>
         /// <param name="oldVersion"></param>
         /// <returns></returns>
-        public static List<string> FieldsChangedBetweenVersions(this SPListItemVersion newVersion,
-            SPListItemVersion oldVersion)
+        public static List<string> FieldsChangedBetweenVersions(this SPListItemVersion newVersion, SPListItemVersion oldVersion)
         {
             if (newVersion == null) throw new ArgumentNullException("newVersion");
             if (oldVersion == null) throw new ArgumentNullException("oldVersion");
+
             using (new SPMonitoredScope("FieldsChangedBetweenVersions"))
             {
                 List<string> changedFields = new List<string>();
@@ -452,8 +451,7 @@ namespace Navertica.SharePoint.Extensions
         {
             if (item == null) throw new ArgumentNullException("item");
 
-            return (useRelativeUrl ? "" + "/" : item.ParentList.ParentWeb.Url + "/") +
-                   item.ParentList.Forms[PAGETYPE.PAGE_DISPLAYFORM].Url + "?ID=" + item.ID;
+            return ( useRelativeUrl ? "" + "/" : item.Web.Url + "/" ) + item.ParentList.Forms[PAGETYPE.PAGE_DISPLAYFORM].Url + "?ID=" + item.ID;
         }
 
         /// <summary>
@@ -466,8 +464,7 @@ namespace Navertica.SharePoint.Extensions
         {
             if (item == null) throw new ArgumentNullException("item");
 
-            return (useRelativeUrl ? "" + "/" : item.ParentList.ParentWeb.Url + "/") +
-                   item.ParentList.Forms[PAGETYPE.PAGE_EDITFORM].Url + "?ID=" + item.ID;
+            return ( useRelativeUrl ? "" + "/" : item.Web.Url + "/" ) + item.ParentList.Forms[PAGETYPE.PAGE_EDITFORM].Url + "?ID=" + item.ID;
         }
 
         /// <summary>
@@ -505,16 +502,14 @@ namespace Navertica.SharePoint.Extensions
         /// <param name="boundLookupField"></param>
         /// <param name="orderBy">null/empty or internal names of fields to order by - if the firest character is >, descendent ordering will be used, ascending by default</param>
         /// <returns></returns>
-        public static SPListItemCollection GetBoundLookupItems(this SPListItem item, SPFieldLookup boundLookupField,
-            IEnumerable<string> orderBy = null)
+        public static SPListItemCollection GetBoundLookupItems(this SPListItem item, SPFieldLookup boundLookupField, IEnumerable<string> orderBy = null)
         {
             if (item == null) throw new ArgumentNullException("item");
             if (boundLookupField == null) throw new ArgumentNullException("boundLookupField");
 
             if (!boundLookupField.ParentList.ContainsFieldIntName(boundLookupField.InternalName)) return null;
 
-            SPListItemCollection results = boundLookupField.ParentList.GetItemsByLookupId(
-                boundLookupField.InternalName, item.ID, orderBy);
+            SPListItemCollection results = boundLookupField.ParentList.GetItemsByLookupId(boundLookupField.InternalName, item.ID, orderBy);
 
             return results;
         }
@@ -801,8 +796,7 @@ namespace Navertica.SharePoint.Extensions
             if (itemVersion == null) throw new ArgumentNullException("itemVersion");
             if (lookupIntName == null) throw new ArgumentNullException("lookupIntName");
             if (func == null) throw new ArgumentNullException("func");
-            if (!itemVersion.ListItem.ParentList.ContainsFieldIntName(lookupIntName))
-                throw new SPFieldNotFoundException(itemVersion.ListItem.ParentList, lookupIntName);
+            if (!itemVersion.ListItem.ParentList.ContainsFieldIntName(lookupIntName)) throw new SPFieldNotFoundException(itemVersion.ListItem.ParentList, lookupIntName);
 
             DateTime versionDateTime = itemVersion.Created.ToUniversalTime();
 
@@ -858,16 +852,14 @@ namespace Navertica.SharePoint.Extensions
 
             SPFile spFile = item.Web.GetFile(item.Url);
 
-            if (spFile == null) return null;
-
-            return spFile.ParentFolder;
+            return spFile == null ? null : spFile.ParentFolder;
         }
 
         public static string GetTitleLink(this SPListItem item)
         {
             if (item == null) throw new ArgumentNullException("item");
 
-            return "<a href='" + item.FormUrlDisplay() + "'>" + (item["Title"] ?? item.Name) + "</a>";
+            return "<a href='" + item.FormUrlDisplay() + "'>" + ( item["Title"] ?? item.Name ) + "</a>";
         }
 
         /// <summary>
@@ -892,12 +884,10 @@ namespace Navertica.SharePoint.Extensions
 
             StringBuilder sb = new StringBuilder();
             // tahle podivnost se splhanim nahoru a dolu po objektech tu pry je kvuli tomu, ze s vysledkem z SPQuery by to nejelo
-            SPFieldMultiLineText field =
-                itemVersion.ListItem.Fields.GetFieldByInternalName(fieldInternalName) as SPFieldMultiLineText;
+            SPFieldMultiLineText field = itemVersion.ListItem.Fields.GetFieldByInternalName(fieldInternalName) as SPFieldMultiLineText;
             if (field == null) throw new SPFieldNotFoundException(itemVersion.ListItem.ParentList, fieldInternalName);
 
-            foreach (
-                KeyValuePair<DateTime, Dictionary<string, string>> kvp in versionsDict)
+            foreach (KeyValuePair<DateTime, Dictionary<string, string>> kvp in versionsDict)
             {
                 if (kvp.Key > itemVersion.Created) continue;
                 string comment = kvp.Value["ContentsHTML"];
@@ -910,6 +900,7 @@ namespace Navertica.SharePoint.Extensions
                     sb.Append("\n\r");
                 }
             }
+
             return sb.ToString();
         }
 
@@ -923,7 +914,8 @@ namespace Navertica.SharePoint.Extensions
         {
             if (item == null) throw new ArgumentNullException("item");
             if (fieldInternalName == null) throw new ArgumentNullException("fieldInternalName");
-            return item.Versions[0].GetVersionedMultiLineTextAsPlainText(fieldInternalName);            
+
+            return item.Versions[0].GetVersionedMultiLineTextAsPlainText(fieldInternalName);
         }
 
         public static string GetVersionedMultiLineTextAsPlainText(this SPListItemVersion itemVersion, string fieldInternalName)
@@ -934,47 +926,46 @@ namespace Navertica.SharePoint.Extensions
 
             StringBuilder sb = new StringBuilder();
             // tahle podivnost se splhanim nahoru a dolu po objektech tu pry je kvuli tomu, ze s vysledkem z SPQuery by to nejelo
-            SPFieldMultiLineText field =
-                itemVersion.ListItem.Fields.GetFieldByInternalName(fieldInternalName) as SPFieldMultiLineText;
+            SPFieldMultiLineText field = itemVersion.ListItem.Fields.GetFieldByInternalName(fieldInternalName) as SPFieldMultiLineText;
             if (field == null) throw new SPFieldNotFoundException(itemVersion.ListItem.ParentList, fieldInternalName);
 
-            foreach (
-                KeyValuePair<DateTime, Dictionary<string, string>> kvp in versionsDict)
+            foreach (KeyValuePair<DateTime, Dictionary<string, string>> kvp in versionsDict)
             {
                 if (kvp.Key > itemVersion.Created) continue;
                 string comment = kvp.Value["Contents"];
                 if (comment != null && comment.Trim() != string.Empty)
                 {
                     sb.Append(kvp.Value["CreatedByName"]).Append(" (");
-                    sb.Append(kvp.Key.ToString(itemVersion.ListItem.Web.UICulture)); 
+                    sb.Append(kvp.Key.ToString(itemVersion.ListItem.Web.UICulture));
                     sb.Append("): ");
                     sb.Append(comment);
                     sb.Append("\n\r");
                 }
             }
+
             return sb.ToString();
+        }
 
-        }    
-
-    public static SortedDictionary<DateTime, Dictionary<string, string>> 
-            GetVersionedMultiLineTextAsSortedDictionary(this SPListItem item, string fieldInternalName)
+        public static SortedDictionary<DateTime, Dictionary<string, string>> GetVersionedMultiLineTextAsSortedDictionary(this SPListItem item, string fieldInternalName)
         {
             return item.Versions[0].GetVersionedMultiLineTextAsSortedDictionary(fieldInternalName);
         }
 
-        public static SortedDictionary<DateTime, Dictionary<string, string>> GetVersionedMultiLineTextAsSortedDictionary
-            (this SPListItemVersion itemversion, string fieldInternalName)
+        public static SortedDictionary<DateTime, Dictionary<string, string>> GetVersionedMultiLineTextAsSortedDictionary(this SPListItemVersion itemversion, string fieldInternalName)
         {
             if (itemversion == null) throw new ArgumentNullException("itemversion");
             if (fieldInternalName == null) throw new ArgumentNullException("fieldInternalName");
+
             string cacheKey = "NVR_MultiLine" + itemversion.ListItem.UniqueId + "_v" + itemversion.VersionId;
+
             var cached = HttpContext.Current.Cache.Get(cacheKey);
             if (cached != null)
-                return new SortedDictionary<DateTime, Dictionary<string, string>>(
-                    ((SortedDictionary<DateTime, Dictionary<string, string>>) cached));
+            {
+                return new SortedDictionary<DateTime, Dictionary<string, string>>(( (SortedDictionary<DateTime, Dictionary<string, string>>) cached ));
+            }
 
-            var resultdict =
-                new SortedDictionary<DateTime, Dictionary<string, string>>();
+            var resultdict = new SortedDictionary<DateTime, Dictionary<string, string>>();
+
             // tahle podivnost se splhanim nahoru a dolu po objektech tu pry je kvuli tomu, ze s vysledkem z SPQuery by to nejelo
             var field = itemversion.ListItem.Fields.GetFieldByInternalName(fieldInternalName) as SPFieldMultiLineText;
             if (field == null) throw new SPFieldNotFoundException(itemversion.ListItem.ParentList, fieldInternalName);
@@ -982,24 +973,26 @@ namespace Navertica.SharePoint.Extensions
             foreach (
                 SPListItemVersion version in
                     itemversion.ListItem.Web.Lists[itemversion.ListItem.ParentList.ID]
-                    .GetItemByUniqueId(itemversion.ListItem.UniqueId).Versions)
+                        .GetItemByUniqueId(itemversion.ListItem.UniqueId).Versions)
             {
                 if (version.Created > itemversion.Created) continue;
+
                 string comment = field.GetFieldValueAsText(version.ListItem[fieldInternalName]);
                 if (comment != null && comment.Trim() != string.Empty)
                 {
                     string commentHTML = field.GetFieldValueAsHtml(version[fieldInternalName]);
                     resultdict[version.Created] = new Dictionary<string, string>
                     {
-                        {"CreatedBy", version.CreatedBy.User.LoginNameNormalized()},
-                        {"CreatedByName", version.CreatedBy.User.Name},
-                        {"Contents", comment},
-                        {"ContentsHTML", commentHTML},
+                        { "CreatedBy", version.CreatedBy.User.LoginNameNormalized() },
+                        { "CreatedByName", version.CreatedBy.User.Name },
+                        { "Contents", comment },
+                        { "ContentsHTML", commentHTML },
                     };
                 }
             }
-            HttpContext.Current.Cache.Insert(cacheKey, resultdict, null, DateTime.Now.AddMinutes(2),
-                Cache.NoSlidingExpiration);
+
+            HttpContext.Current.Cache.Insert(cacheKey, resultdict, null, DateTime.Now.AddMinutes(2), Cache.NoSlidingExpiration);
+
             return resultdict;
         }
 
@@ -1134,7 +1127,7 @@ namespace Navertica.SharePoint.Extensions
             if (func == null) throw new ArgumentNullException("func");
 
             object result = null;
-            item.Web.RunWithAllowUnsafeUpdates(() => result = func(item)); 
+            item.Web.RunWithAllowUnsafeUpdates(() => result = func(item));
             return result;
         }
 
@@ -1150,7 +1143,7 @@ namespace Navertica.SharePoint.Extensions
             if (func == null) throw new ArgumentNullException("func");
 
             object result = null;
-            itemVersion.ListItem.Web.RunWithAllowUnsafeUpdates(() => result = func(itemVersion)); 
+            itemVersion.ListItem.Web.RunWithAllowUnsafeUpdates(() => result = func(itemVersion));
             return result;
         }
 

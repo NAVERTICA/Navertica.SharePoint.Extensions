@@ -13,6 +13,7 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.  */
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -38,11 +39,11 @@ namespace Navertica.SharePoint
             get
             {
                 return
-                    (from webguid in Keys
+                    ( from webguid in Keys
                         from listGuid in this[webguid].Keys
                         select this[webguid][listGuid]
                         into o
-                        select o.Count).Sum();
+                        select o.Count ).Sum();
             }
         }
 
@@ -69,9 +70,7 @@ namespace Navertica.SharePoint
 
         #region Constructors
 
-        public WebListItemDictionary()
-        {
-        }
+        public WebListItemDictionary() {}
 
         public WebListItemDictionary(WebListItemId id)
         {
@@ -294,8 +293,7 @@ namespace Navertica.SharePoint
         /// <param name="versionValidAt">DateTime (in UTC!), which will be used to find the version that was valid at this point</param>
         /// <param name="func"></param>
         /// <returns></returns>
-        public ICollection<object> ProcessItemVersion(SPSite site, DateTime versionValidAt,
-            Func<SPListItemVersion, object> func)
+        public ICollection<object> ProcessItemVersion(SPSite site, DateTime versionValidAt, Func<SPListItemVersion, object> func)
         {
             if (site == null) throw new ArgumentNullException("site");
             if (func == null) throw new ArgumentNullException("func");

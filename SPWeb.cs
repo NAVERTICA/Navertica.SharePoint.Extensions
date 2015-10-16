@@ -13,6 +13,7 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.  */
+
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -35,7 +36,7 @@ namespace Navertica.SharePoint.Extensions
         /// <param name="fullPath"></param>
         /// <param name="uploadStream"></param>
         /// <returns></returns>
-        public static SPListItem CreateNewDocument(this SPWeb web, string fullPath, Stream uploadStream) //TODO asi zbytecne
+        public static SPListItem CreateNewDocument(this SPWeb web, string fullPath, Stream uploadStream)
         {
             if (web == null) throw new ArgumentNullException("web");
             if (fullPath == null) throw new ArgumentNullException("fullPath");
@@ -162,6 +163,7 @@ namespace Navertica.SharePoint.Extensions
                     return null;
                 });
             }
+
             return foundLists;
         }
 
@@ -227,9 +229,11 @@ namespace Navertica.SharePoint.Extensions
                             }
                         }
                     }
+
                     return null;
                 });
             }
+
             return foundLists;
         }
 
@@ -261,6 +265,7 @@ namespace Navertica.SharePoint.Extensions
                         }
                     }
                 }
+
                 return null;
             });
 
@@ -285,6 +290,7 @@ namespace Navertica.SharePoint.Extensions
                         webIDs.Add(subweb.ID);
                         subweb.Dispose();
                     }
+
                     return null;
                 });
 
@@ -421,7 +427,7 @@ namespace Navertica.SharePoint.Extensions
             }
 
             try
-            {                
+            {
                 if (identAsString.StartsWith("-1;#i")) identAsString = identAsString.Replace("-1;#i:", "i:");
 
                 return web.SiteUsers[identAsString];
@@ -442,8 +448,10 @@ namespace Navertica.SharePoint.Extensions
                         {
                             user = web.EnsureUser(principal.LoginName);
                         });
+
                         return user;
                     }
+
                     return web.SiteUsers[principal.LoginName];
                 }
             }
@@ -464,10 +472,11 @@ namespace Navertica.SharePoint.Extensions
                         {
                             user = web.EnsureUser(principal.LoginName);
                         });
+
                         return user;
                     }
                     return web.SiteUsers.GetByID(principal.PrincipalId);
-                }             
+                }
             }
             // ReSharper disable once EmptyGeneralCatchClause
             catch { } // in case we get handed a string similar to claim, there's an exception
@@ -779,7 +788,8 @@ namespace Navertica.SharePoint.Extensions
                     }
                 }
             }
-            return users.Distinct(new SPUserComparer()) /*.OrderBy(u => u.LoginName)*/.ToList();
+
+            return users.Distinct(new SPUserComparer()).ToList();
         }
 
         #endregion
@@ -806,7 +816,6 @@ namespace Navertica.SharePoint.Extensions
 
         #region OpenList
 
-
         /// <summary>
         /// Tries to open list with given guid - mostly for usage in scripts
         /// </summary>
@@ -818,7 +827,7 @@ namespace Navertica.SharePoint.Extensions
         /// <exception cref="SPListNotFoundException"></exception>
         public static SPList OpenList(this SPWeb web, Guid listGuid, bool throwExc = false)
         {
-            //if (web == null) throw new ArgumentNullException("web"); //zatim pocitame ze web muze byt null, ale nemelo by to tak byt
+            if (web == null) throw new ArgumentNullException("web");
             if (listGuid == null) throw new ArgumentNullException("listGuid");
             if (listGuid.IsEmpty()) throw new ArgumentException("Guid is Empty");
 
@@ -859,7 +868,7 @@ namespace Navertica.SharePoint.Extensions
 
                 string listInternalName = SPListExtensions.ListInternalName(listIdentification.Trim());
 
-                Dictionary<string, Guid> result = (Dictionary<string, Guid>)HttpRuntime.Cache.Get(cacheKey);
+                Dictionary<string, Guid> result = (Dictionary<string, Guid>) HttpRuntime.Cache.Get(cacheKey);
 
                 if (result == null)
                 {
@@ -903,7 +912,7 @@ namespace Navertica.SharePoint.Extensions
                     throw new SPListAccesDeniedException(listGuid, web);
                 }
             }
-            catch (Exception) { }
+            catch (Exception) {}
 
             if (throwExc)
             {
@@ -912,7 +921,6 @@ namespace Navertica.SharePoint.Extensions
 
             return null;
         }
-
 
         #endregion
 
@@ -947,17 +955,6 @@ namespace Navertica.SharePoint.Extensions
 
             if (web.InSandbox() || web.CurrentUser.IsSiteAdmin) //Don't runeleveted if user is admin or already run with admin rights
             {
-                /*using (SPSite unelevatedSite = new SPSite(siteGuid, web.CurrentUser.UserToken))
-                {
-                    unelevatedSite.AllowUnsafeUpdates = true;
-                    using (SPWeb unelevatedWeb = unelevatedSite.OpenWeb(webGuid))
-                    {
-                        unelevatedWeb.AllowUnsafeUpdates = true;
-                        result = func(unelevatedWeb);
-                        unelevatedWeb.AllowUnsafeUpdates = false;
-                    }
-                    unelevatedSite.AllowUnsafeUpdates = false;
-                }*/
                 bool origSiteunsafe = web.Site.AllowUnsafeUpdates;
                 web.Site.AllowUnsafeUpdates = true;
                 web.RunWithAllowUnsafeUpdates(delegate { result = func(web); });

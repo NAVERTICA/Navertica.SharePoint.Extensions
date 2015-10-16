@@ -13,6 +13,7 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.  */
+
 using System;
 using System.IO;
 using System.Linq;
@@ -75,6 +76,7 @@ namespace Navertica.SharePoint.Extensions
                             // ReSharper disable once EmptyGeneralCatchClause
                             catch (Exception) {}
                         }
+
                         return null;
                     });
 
@@ -113,11 +115,11 @@ namespace Navertica.SharePoint.Extensions
                             foundLists.AddRange(web.Lists.Cast<SPList>().Where(l => l.BaseTemplate == listType).Select(l => new WebListId(l)));
                         }
                     }
+
                     return null;
                 });
 
                 return foundLists;
-
             }
         }
 
@@ -185,6 +187,7 @@ namespace Navertica.SharePoint.Extensions
                     return null;
                 });
             }
+
             return foundLists;
         }
 
@@ -221,6 +224,7 @@ namespace Navertica.SharePoint.Extensions
                         }
                     }
                 }
+
                 return null;
             });
 
@@ -397,6 +401,7 @@ namespace Navertica.SharePoint.Extensions
 
                 bool dispose = false;
                 SPWeb web = null;
+
                 try
                 {
                     SPSecurity.CatchAccessDeniedException = false;
@@ -463,12 +468,6 @@ namespace Navertica.SharePoint.Extensions
 
             if (site.InSandbox() || site.RootWeb.CurrentUser.IsSiteAdmin)
             {
-                /*using (SPSite unelevatedSite = new SPSite(siteGuid,site.RootWeb.CurrentUser.UserToken))
-                {
-                    unelevatedSite.AllowUnsafeUpdates = true;
-                    result = func(unelevatedSite);
-                    unelevatedSite.AllowUnsafeUpdates = false;
-                }*/
                 bool origSiteunsafe = site.AllowUnsafeUpdates;
                 site.AllowUnsafeUpdates = true;
                 result = func(site);

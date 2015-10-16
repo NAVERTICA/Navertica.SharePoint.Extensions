@@ -13,6 +13,7 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.  */
+
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -82,7 +83,6 @@ namespace Navertica.SharePoint.Extensions
             }
 
             return guids;
-
         }
 
         /// <summary>
@@ -96,7 +96,6 @@ namespace Navertica.SharePoint.Extensions
 
             return principals.Select(principal => principal.ID).ToList();
         }
-
 
         /// <summary>
         /// LoginName in lowercase, without Claims prefix
@@ -121,7 +120,6 @@ namespace Navertica.SharePoint.Extensions
 
             return principals.Select(principal => principal.LoginNameNormalized()).ToList();
         }
-
 
         /// <summary>
         /// Tries to load this user's manager from ActiveDirectory
@@ -162,7 +160,6 @@ namespace Navertica.SharePoint.Extensions
             return principals.Select(principal => principal.Name).ToList();
         }
 
-
         /// <summary>
         /// Returns the SPFieldUserValue to be saved in a SPFieldUser for the current principal (user/group)
         /// </summary>
@@ -173,7 +170,7 @@ namespace Navertica.SharePoint.Extensions
             if (principal == null) throw new ArgumentNullException("principal");
 
             return new SPFieldUserValue(principal.ParentWeb, GetSPFieldUserValueFormat(principal));
-        }      
+        }
 
         /// <summary>
         /// Returns the text format "ID;#Name" for the current principal (user/group)
@@ -350,7 +347,7 @@ namespace Navertica.SharePoint.Extensions
             dict.Sort();
             return dict;
         }
-        
+
         private static SearchResultCollection LDAP_Find(DirectoryEntry de, string filter, IEnumerable<string> properties)
         {
             string ldapString = "-";
@@ -369,7 +366,7 @@ namespace Navertica.SharePoint.Extensions
             {
                 throw new Exception("LDAP_Find problem\n" + ldapString + "\n" + ex + "\n");
             }
-        }    
+        }
 
         public static bool IsValid(this DirectoryEntry de)
         {
@@ -400,8 +397,8 @@ namespace Navertica.SharePoint.Extensions
         public static int GetPreferredLanguage(this SPUser user)
         {
             var preflangs = user.LanguageSettings.PreferredDisplayLanguages;
-            int lang = preflangs.Count > 0 ? preflangs[0].LCID : (int)user.ParentWeb.Language;
-            if (lang < 1000) lang = (int)user.ParentWeb.Language;
+            int lang = preflangs.Count > 0 ? preflangs[0].LCID : (int) user.ParentWeb.Language;
+            if (lang < 1000) lang = (int) user.ParentWeb.Language;
             return lang;
         }
     }

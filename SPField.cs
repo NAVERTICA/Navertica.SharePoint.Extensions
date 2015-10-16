@@ -13,11 +13,11 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.  */
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Xml;
 using Microsoft.SharePoint;
 
 namespace Navertica.SharePoint.Extensions
@@ -38,7 +38,7 @@ namespace Navertica.SharePoint.Extensions
             foreach (Guid guid in guids)
             {
                 try
-                {                    
+                {
                     // ReSharper disable once UnusedVariable
                     var tmp = fieldCollection[guid];
                 }
@@ -74,7 +74,6 @@ namespace Navertica.SharePoint.Extensions
         {
             if (fieldCollection == null) throw new ArgumentNullException("fieldCollection");
             if (intFieldNames == null) throw new ArgumentNullException("intFieldNames");
-
 
             foreach (string fieldname in intFieldNames)
             {
@@ -178,7 +177,6 @@ namespace Navertica.SharePoint.Extensions
             return fieldCollection.Cast<SPField>().Where(fld => !fld.Hidden && fld.InternalName[0] != '_').Select(fld => fld.InternalName);
         }
 
-
         /// <summary>
         /// Checks whether field.TypeAsString contains the word "lookup", so that it works also for fieldtypes like FilteredLookup
         /// </summary>
@@ -190,43 +188,6 @@ namespace Navertica.SharePoint.Extensions
 
             string fieldType = field.TypeAsString.ToLowerInvariant();
             return fieldType.Contains("lookup") && fieldType != "extendedlookup"; // NAVERTICA ExtendedLookup is needed for backwards compatibility, and is not a lookup
-        }
-
-        /// <summary>
-        /// Requires functionality that checks a list's property bag when drawing form fields. This function sets the property bag 
-        /// info so that the field can be rendered as non editable.
-        /// </summary>
-        /// <param name="field"></param>
-        /// <param name="nonEditable"></param>
-        public static void SetNonEditable(this SPField field, bool nonEditable = true)
-        {
-            if (field == null) throw new ArgumentNullException("field");
-
-            if (field.ParentList != null) //field seznamu
-            {
-                var listBag = field.ParentList.RootFolder.Properties;
-                List<string> listFields = listBag.ContainsKey("NonEditable") ? ( listBag["NonEditable"] ?? "" ).ToString().Split(',').ToList() : new List<string>();
-
-                if (nonEditable) listFields.Add(field.InternalName);
-                else listFields.Remove(field.InternalName);
-
-                if (listBag.ContainsKey("NonEditable")) listBag["NonEditable"] = listFields.Distinct().JoinStrings(",");
-                else listBag.Add("NonEditable", listFields.Distinct().JoinStrings(","));
-                field.ParentList.Update();
-            }
-            else // SiteField
-            {
-                SPWeb web = ( (SPWeb) field.TitleResource.Parent );
-                var webBag = web.Properties;
-                List<string> siteFields = webBag.ContainsKey("NonEditable") ? webBag["NonEditable"].Split(',').ToList() : new List<string>();
-
-                if (nonEditable) siteFields.Add(field.InternalName);
-                else siteFields.Remove(field.InternalName);
-
-                if (webBag.ContainsKey("NonEditable")) webBag["NonEditable"] = siteFields.Distinct().JoinStrings(",");
-                else webBag.Add("NonEditable", siteFields.Distinct().JoinStrings(","));
-                webBag.Update();
-            }
         }
 
         /// <summary>
@@ -269,7 +230,6 @@ namespace Navertica.SharePoint.Extensions
                                     ct.Update();
                                 }
                             }
-                            // ReSharper disable once EmptyGeneralCatchClause
                             catch (Exception) {}
                         }
                     }
