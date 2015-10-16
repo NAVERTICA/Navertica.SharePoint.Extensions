@@ -740,7 +740,7 @@ namespace Navertica.SharePoint.Extensions
             if (listName == "" && url.Contains("Forms/Forms")) listName = "Forms"; //muze se stat
             if (listName == "" && url.Contains("Lists/Lists")) listName = "Lists";
 
-            if (!url.ContainsAny(new[] {"Lists", "Forms"}))
+            if (!url.ContainsAny(new[] { "Lists", "Forms" }))
             {
                 if (rets.Last().Contains(".aspx"))
                 {

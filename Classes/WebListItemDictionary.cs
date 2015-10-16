@@ -324,11 +324,10 @@ namespace Navertica.SharePoint
 
                                 foreach (int itemId in kvpList.Value)
                                 {
-                                    SPListItem item;
                                     SPListItemVersion itemVersion = null;
                                     try
                                     {
-                                        item = list.GetItemById(itemId);
+                                        SPListItem item = list.GetItemById(itemId);
                                         // FIND VERSION VALID AT HISTORIC DATE
 
                                         for (int i = 0; i < item.Versions.Count; i++)
@@ -382,5 +381,4 @@ namespace Navertica.SharePoint
 
         #endregion
     }
-
 }

@@ -30,7 +30,7 @@ namespace Navertica.SharePoint.Extensions
         /// <param name="toSecurableObject"></param>
         /// <param name="deleteOldRights"></param>
         /// <returns></returns>
-        public static bool CopyRights(this SPSecurableObject securableObject, SPSecurableObject toSecurableObject, bool deleteOldRights)
+        public static bool CopyRights(this SPSecurableObject securableObject, SPSecurableObject toSecurableObject, bool deleteOldRights = false)
         {
             if (securableObject == null) throw new ArgumentNullException("securableObject");
             if (toSecurableObject == null) throw new ArgumentNullException("toSecurableObject");
@@ -79,14 +79,14 @@ namespace Navertica.SharePoint.Extensions
             switch (securableObject.GetType().Name)
             {
                 case "SPListItem":
-                    return ((SPListItem)securableObject).FormUrlDisplay() + "#SPListItem";
+                    return ( (SPListItem) securableObject ).FormUrlDisplay() + "#SPListItem";
                 case "SPList":
-                    return ((SPList)securableObject).DefaultViewUrl + "#SPList";
+                    return ( (SPList) securableObject ).DefaultViewUrl + "#SPList";
                 case "SPWeb":
-                    return ((SPWeb)securableObject).Url + "#SPWeb";
-                default:
-                    return "";
+                    return ( (SPWeb) securableObject ).Url + "#SPWeb";
             }
+
+            return null;
         }
 
         /// <summary>
@@ -183,9 +183,9 @@ namespace Navertica.SharePoint.Extensions
                     return ( (SPList) securableObject ).ParentWeb.Site.SystemAccount.Email;
                 case "SPWeb":
                     return ( (SPWeb) securableObject ).Site.SystemAccount.Email;
-                default:
-                    return "";
             }
+
+            return null;
         }
 
         /// <summary>

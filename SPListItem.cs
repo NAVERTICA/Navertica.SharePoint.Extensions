@@ -13,6 +13,7 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.  */
+
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -40,8 +41,7 @@ namespace Navertica.SharePoint.Extensions
         /// <param name="additional">Optional additional values to set in the copied item - keys are field internal names</param>
         /// <param name="queryStr">Optional CAML query string to find existing item(s), and overwrite the first one</param>
         /// <returns>Copied SPListItem or null</returns>
-        public static SPListItem CopyTo(this SPListItem item, SPList targetList, bool deleteOriginal = false,
-            bool overwriteExisting = false, DictionaryNVR additional = null, string queryStr = "")
+        public static SPListItem CopyTo(this SPListItem item, SPList targetList, bool deleteOriginal = false, bool overwriteExisting = false, DictionaryNVR additional = null, string queryStr = "")
         {
             if (item == null) throw new ArgumentNullException("item");
             if (targetList == null) throw new ArgumentNullException("targetList");
@@ -59,17 +59,15 @@ namespace Navertica.SharePoint.Extensions
         /// <param name="additional">Optional additional metadata fields to set in the copied item - keys are field internal names</param>
         /// <param name="queryStr">Optional CAML query string to find existing item and overwrite it, if there are more then one, ConstraintException will be thrown</param>
         /// <returns></returns>
-        public static SPListItem CopyTo(this SPListItem item, SPFolder toFolder, bool deleteOriginal = false, bool overwriteExisting = false, 
-            DictionaryNVR additional = null, string queryStr = "")
+        public static SPListItem CopyTo(this SPListItem item, SPFolder toFolder, bool deleteOriginal = false, bool overwriteExisting = false, DictionaryNVR additional = null, string queryStr = "")
         {
             if (item == null) throw new ArgumentNullException("item");
             if (toFolder == null) throw new ArgumentNullException("toFolder");
 
             using (new SPMonitoredScope(item.ID + " - " + item.Title + "CopyTo() - " + toFolder.ServerRelativeUrl))
             {
-                SPListItemCollection col;
                 SPListItem newItem = null;
-                bool itemHasToBeUpdated = false; 
+                bool itemHasToBeUpdated = false;
 
                 SPList sourceList = item.ParentList;
                 SPList targetList = toFolder.ParentWeb.OpenList(toFolder.ParentListId, true);
@@ -77,16 +75,16 @@ namespace Navertica.SharePoint.Extensions
                 string targetType = targetList.GetType().FullName;
 
                 if (sourceType != targetType)
-                    throw new ArgumentException("Can not copy item of type item " + sourceType + " to list of type " +
-                                                targetType);
+                    throw new ArgumentException("Can not copy item of type item " + sourceType + " to list of type " + targetType);
                 if (additional != null && !targetList.ContainsFieldIntName(additional.Keys))
                     throw new SPFieldNotFoundException(targetList, additional.Keys);
 
-
                 #region create item or find existing to overwrite
+
                 // try to find existing item(s) if there's no query specified
                 if (overwriteExisting)
                 {
+                    SPListItemCollection col;
                     if (string.IsNullOrEmpty(queryStr))
                     {
                         if (item.File != null) // in doc library use filename
@@ -126,8 +124,7 @@ namespace Navertica.SharePoint.Extensions
                                                 item.Folder.ServerRelativeUrl
                                 ? item.Folder.Name
                                 : "Duplicate - " + item.Folder.Name;
-                            newItem = targetList.Items.Add(toFolder.ServerRelativeUrl, SPFileSystemObjectType.Folder,
-                                folderName);
+                            newItem = targetList.Items.Add(toFolder.ServerRelativeUrl, SPFileSystemObjectType.Folder, folderName);
                         }
                         else if (item.File != null) //doc library file
                         {
@@ -139,8 +136,7 @@ namespace Navertica.SharePoint.Extensions
                                 ? item.File.Name
                                 : "Duplicate - " + item.File.Name; // copying to the same folder
 
-                            newItem = toFolder.CreateOrUpdateDocument(filename, item.File.OpenBinary(),
-                                overwriteExisting);
+                            newItem = toFolder.CreateOrUpdateDocument(filename, item.File.OpenBinary(), overwriteExisting);
                         }
                         else // custom list item
                         {
@@ -153,9 +149,11 @@ namespace Navertica.SharePoint.Extensions
 
                     // SPListDataValidationException can get thrown here                    
                 }
+
                 #endregion
 
                 #region Copy metadata
+
                 // copy metadata - expects fields have the same name and matching (or similar enough) types
                 // tries to get values also from hidden and computed fields
                 for (int i = 0; i < sourceList.Fields.Count; i++)
@@ -483,13 +481,12 @@ namespace Navertica.SharePoint.Extensions
                 .SubFolders[item.ID.ToString(item.Web.UICulture)];
         }
 
-        public static string GetDateTimeString(this SPListItem item, string internalName, SPUser user,
-            bool incudeTime = false)
+        public static string GetDateTimeString(this SPListItem item, string internalName, SPUser user, bool incudeTime = false)
         {
             DateTime? date = (DateTime?) item[internalName];
             if (date == null) return "";
 
-            return ((DateTime) date).ToStringLocalized(incudeTime, user.GetPreferredLanguage());
+            return ( (DateTime) date ).ToStringLocalized(incudeTime, user.GetPreferredLanguage());
         }
 
         #region Bound lookups
@@ -540,7 +537,7 @@ namespace Navertica.SharePoint.Extensions
 
             WebListId result = new WebListId();
 
-            if (lookupIntName.EqualAny(new[] {"FileRef", "ItemChildCount", "FolderChildCount"}))
+            if (lookupIntName.EqualAny(new[] { "FileRef", "ItemChildCount", "FolderChildCount" }))
             {
                 result.InvalidMessage = "Get lookup form " + lookupIntName + "is not allowed";
                 return result;
@@ -548,7 +545,7 @@ namespace Navertica.SharePoint.Extensions
 
             try
             {
-                using (SPWeb lookupWeb = list.ParentWeb.Site.OpenW(((SPFieldLookup) lookupField).LookupWebId, true))
+                using (SPWeb lookupWeb = list.ParentWeb.Site.OpenW(( (SPFieldLookup) lookupField ).LookupWebId, true))
                 {
                     try
                     {
@@ -593,7 +590,7 @@ namespace Navertica.SharePoint.Extensions
                     {
                         SPList lookupList = lookupWeb.Lists[webListId.ListGuid];
 
-                        int id = (item[lookupIntName] ?? String.Empty).ToString().GetLookupIndex();
+                        int id = ( item[lookupIntName] ?? String.Empty ).ToString().GetLookupIndex();
 
                         if (id > 0)
                         {
@@ -646,7 +643,7 @@ namespace Navertica.SharePoint.Extensions
                     {
                         SPList lookupList = lookupWeb.Lists[webListId.ListGuid];
 
-                        int[] ids = (item[lookupIntName] ?? "").ToString().GetLookupIndexes();
+                        int[] ids = ( item[lookupIntName] ?? "" ).ToString().GetLookupIndexes();
 
                         foreach (int itemId in ids.OrderBy(i => i))
                         {
@@ -689,7 +686,7 @@ namespace Navertica.SharePoint.Extensions
                     {
                         SPList lookupList = lookupWeb.Lists[webListId.ListGuid];
 
-                        int[] ids = (itemVersion[lookupIntName] ?? "").ToString().GetLookupIndexes();
+                        int[] ids = ( itemVersion[lookupIntName] ?? "" ).ToString().GetLookupIndexes();
 
                         foreach (int itemId in ids.OrderBy(i => i))
                         {
@@ -700,7 +697,7 @@ namespace Navertica.SharePoint.Extensions
                                     result.Add(new WebListItemId(lookupList.GetItemById(itemId)));
                                 }
                                 // ReSharper disable once EmptyGeneralCatchClause
-                                catch { }
+                                catch {}
                             }
                         }
                     }
@@ -722,8 +719,8 @@ namespace Navertica.SharePoint.Extensions
             if (item == null) throw new ArgumentNullException("item");
             if (lookupIntName == null) throw new ArgumentNullException("lookupIntName");
             if (func == null) throw new ArgumentNullException("func");
-            if (!item.ParentList.ContainsFieldIntName(lookupIntName))
-                throw new SPFieldNotFoundException(item.ParentList, lookupIntName);
+            if (!item.ParentList.ContainsFieldIntName(lookupIntName)) throw new SPFieldNotFoundException(item.ParentList, lookupIntName);
+
             using (new SPMonitoredScope("ProcessLookupList"))
             {
                 object result;
@@ -752,14 +749,12 @@ namespace Navertica.SharePoint.Extensions
         /// <param name="lookupIntName"></param>
         /// <param name="func"></param>
         /// <returns></returns>
-        public static ICollection<object> ProcessLookupItems(this SPListItem item, string lookupIntName,
-            Func<SPListItem, object> func)
+        public static ICollection<object> ProcessLookupItems(this SPListItem item, string lookupIntName, Func<SPListItem, object> func)
         {
             if (item == null) throw new ArgumentNullException("item");
             if (lookupIntName == null) throw new ArgumentNullException("lookupIntName");
             if (func == null) throw new ArgumentNullException("func");
-            if (!item.ParentList.ContainsFieldIntName(lookupIntName))
-                throw new SPFieldNotFoundException(item.ParentList, lookupIntName);
+            if (!item.ParentList.ContainsFieldIntName(lookupIntName)) throw new SPFieldNotFoundException(item.ParentList, lookupIntName);
 
             using (new SPMonitoredScope("ProcessLookupItems"))
             {
@@ -790,8 +785,7 @@ namespace Navertica.SharePoint.Extensions
         /// <param name="lookupIntName"></param>
         /// <param name="func"></param>
         /// <returns></returns>
-        public static ICollection<object> ProcessLookupItems(this SPListItemVersion itemVersion, string lookupIntName,
-            Func<SPListItemVersion, object> func)
+        public static ICollection<object> ProcessLookupItems(this SPListItemVersion itemVersion, string lookupIntName, Func<SPListItemVersion, object> func)
         {
             if (itemVersion == null) throw new ArgumentNullException("itemVersion");
             if (lookupIntName == null) throw new ArgumentNullException("lookupIntName");

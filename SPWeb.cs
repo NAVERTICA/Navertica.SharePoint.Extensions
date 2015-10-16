@@ -333,7 +333,7 @@ namespace Navertica.SharePoint.Extensions
         /// <param name="web"></param>
         /// <param name="url"></param>
         /// <returns></returns>
-        public static SPListItem GetItemByUrl(this SPWeb web, string url) //TODO asi zbytecna funkce
+        public static SPListItem GetItemByUrl(this SPWeb web, string url)
         {
             if (web == null) throw new ArgumentNullException("web");
             if (url == null) throw new ArgumentNullException("url");
@@ -461,8 +461,7 @@ namespace Navertica.SharePoint.Extensions
             //may be a domain group
             try
             {
-                SPPrincipalInfo principal = SPUtility.ResolvePrincipal(web, identAsString, SPPrincipalType.SecurityGroup,
-                    SPPrincipalSource.All, null, false);
+                SPPrincipalInfo principal = SPUtility.ResolvePrincipal(web, identAsString, SPPrincipalType.SecurityGroup, SPPrincipalSource.All, null, false);
                 if (principal != null)
                 {
                     if (principal.PrincipalId == -1)
@@ -479,7 +478,7 @@ namespace Navertica.SharePoint.Extensions
                 }
             }
             // ReSharper disable once EmptyGeneralCatchClause
-            catch { } // in case we get handed a string similar to claim, there's an exception
+            catch {} // in case we get handed a string similar to claim, there's an exception
 
             return null;
         }
@@ -609,7 +608,7 @@ namespace Navertica.SharePoint.Extensions
         /// <param name="web"></param>
         /// <param name="identifications"></param>
         /// <returns>List of SPPrincipal, which are not duplicated and was susscesfully load. List does not contains null elements.</returns>
-        public static List<SPPrincipal> GetSPPrincipals(this SPWeb web, IEnumerable identifications) //TODO prepsat
+        public static List<SPPrincipal> GetSPPrincipals(this SPWeb web, IEnumerable identifications)
         {
             if (web == null) throw new ArgumentNullException("web");
             if (identifications == null) throw new ArgumentNullException("identifications");
@@ -664,8 +663,8 @@ namespace Navertica.SharePoint.Extensions
 
                 principals.RemoveAll(p => p == null); //odstranime vyskyty, ktere se nepodarilo nacist
 
-                return principals.Distinct(new SPPrincipalComparer()) /*.OrderBy(p => p.LoginName)*/.ToList();
                 // ReSharper restore PossibleMultipleEnumeration
+                return principals.Distinct(new SPPrincipalComparer()).ToList();
             }
         }
 
