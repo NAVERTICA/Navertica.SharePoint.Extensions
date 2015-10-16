@@ -202,7 +202,7 @@ namespace Navertica.SharePoint.Extensions
         /// <param name="type"></param>
         /// <param name="syncType"></param>
         /// <param name="sequence"></param>
-        public static void AttachEventReceiver(this SPList list, string assemblyName, string classNameReceiver, SPEventReceiverType type, SPEventReceiverSynchronization syncType = SPEventReceiverSynchronization.Default, int sequence = 10000)
+        public static bool AttachEventReceiver(this SPList list, string assemblyName, string classNameReceiver, SPEventReceiverType type, SPEventReceiverSynchronization syncType = SPEventReceiverSynchronization.Default, int sequence = 10000)
         {
             if (list == null) throw new ArgumentNullException("list");
             if (assemblyName == null) throw new ArgumentNullException("assemblyName");
@@ -214,7 +214,7 @@ namespace Navertica.SharePoint.Extensions
                 ( evRec.Class.ToLowerInvariant() == classNameReceiver.ToLowerInvariant().Trim() ) &&
                 ( evRec.Type == type )))
             {
-                return;
+                return false;
             }
 
             SPEventReceiverDefinition def = list.EventReceivers.Add();
@@ -225,6 +225,7 @@ namespace Navertica.SharePoint.Extensions
             def.SequenceNumber = sequence;
 
             list.ParentWeb.RunWithAllowUnsafeUpdates(def.Update);
+            return true;
         }
 
         /// <summary>
