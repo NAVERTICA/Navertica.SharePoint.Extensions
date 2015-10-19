@@ -55,6 +55,7 @@
   <ItemGroup>
     <Compile Include="Classes\Types.cs" />
     <Compile Include="Classes\DictionaryNVR.cs" />
+    <Compile Include="Classes\DisabledItemEventsScope.cs" />
     <Compile Include="Classes\Exceptions.cs" />
     <Compile Include="Classes\QueryTools.cs" />
     <Compile Include="Classes\SimpleSPLookup.cs" />
