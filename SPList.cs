@@ -363,17 +363,14 @@ namespace Navertica.SharePoint.Extensions
         {
             if (list == null) throw new ArgumentNullException("list");
 
-            string result;
             try
             {
-                result = list.DefaultViewUrl.Remove(list.DefaultViewUrl.LastIndexOf("/", StringComparison.InvariantCulture) + 1);
+                return list.DefaultViewUrl.Remove(list.DefaultViewUrl.LastIndexOf("/", StringComparison.InvariantCulture) + 1);
             }
             catch (NullReferenceException)
             {
-                result = list.Title + " DefaultViewUrlFailed";
+                return list.Title + " DefaultViewUrlFailed";
             }
-
-            return result;
         }
 
         #region Urls
@@ -562,6 +559,13 @@ namespace Navertica.SharePoint.Extensions
             return coll;
         }
 
+        /// <summary>
+        /// Builds a SPQuery from a given query string. Queries all items even in subfolders by default.
+        /// </summary>
+        /// <param name="list"></param>
+        /// <param name="querystr"></param>
+        /// <param name="rowLimit"></param>
+        /// <returns></returns>
         public static SPQuery GetSPQuery(this SPList list, string querystr, int? rowLimit = -1)
         {
             if (list == null) throw new ArgumentNullException("list");
@@ -617,6 +621,7 @@ namespace Navertica.SharePoint.Extensions
                     query.ViewFields = viewFields.Replace("<ViewFields>", "").Replace("</ViewFields>", "");
                     query.ViewFieldsOnly = true;
                 }
+                query.ViewAttributes = "Scope=\"RecursiveAll\"";
             }
 
             if (rowLimit != null && rowLimit > 0)
@@ -733,23 +738,26 @@ namespace Navertica.SharePoint.Extensions
             string url = HttpUtility.UrlDecode(fullUrl) ?? "";
             string listName = string.Empty;
 
-            string[] rets = url.Split('/');
+            List<string> rets = url.Split('/').ToList();
 
-            if (rets.Length == 1) return url;
+            if (rets.Count == 1) return url;
+
+            //can be url in format "/web/LibraryName/"
+            if (!url.Contains("Forms") && !url.Contains("Lists"))
+            {
+                rets.RemoveAll(s => s == "");
+                return rets.Last();
+            }
 
             if (listName == "" && url.Contains("Forms/Forms")) listName = "Forms"; //muze se stat
             if (listName == "" && url.Contains("Lists/Lists")) listName = "Lists";
 
             if (!url.ContainsAny(new[] { "Lists", "Forms" }))
             {
-                if (rets.Last().Contains(".aspx"))
-                {
-                    return rets[rets.Length - 2];
-                }
-                return rets[rets.Length - 1];
+                return rets.Last().Contains(".aspx") ? rets[rets.Count - 2] : rets[rets.Count - 1];
             }
 
-            for (int i = 0; i < rets.Length; i++)
+            for (int i = 0; i < rets.Count; i++)
             {
                 if (rets[i] == "Lists")
                 {
@@ -853,9 +861,8 @@ namespace Navertica.SharePoint.Extensions
         /// <param name="querystr"></param>
         /// <param name="func"></param>
         /// <param name="rowLimit">Should be set to 1 in case items are to be deleted, otherwise Collection modified exception will occur</param>
-        /// <param name="includeSubFolderItems"> </param>
         /// <returns></returns>        
-        public static ICollection<object> ProcessItems(this SPList list, Func<SPListItem, object> func, string querystr = "", int rowLimit = -1, bool includeSubFolderItems = true)
+        public static ICollection<object> ProcessItems(this SPList list, Func<SPListItem, object> func, string querystr = "", int rowLimit = -1)
         {
             if (list == null) throw new ArgumentNullException("list");
             if (querystr == null) throw new ArgumentNullException("querystr");
@@ -864,10 +871,6 @@ namespace Navertica.SharePoint.Extensions
             using (new SPMonitoredScope("ProcessItems"))
             {
                 SPQuery q = GetSPQuery(list, querystr, rowLimit);
-                if (includeSubFolderItems)
-                {
-                    q.ViewAttributes = "Scope=\"Recursive\"";
-                }
 
                 return ProcessItems(list, func, q);
             }
