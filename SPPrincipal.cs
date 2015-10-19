@@ -308,7 +308,7 @@ namespace Navertica.SharePoint.Extensions
                 loginName = loginName.Split('\\').Last();
             }
 
-            SearchResultCollection results = LDAP_Find(de, "(&(&(objectCategory=user)(|(cn=" + user.Name + ")(sAMAccountName=" + loginName + "))))", properties);
+            SearchResultCollection results = LDAP_Find(de, string.Format("(&(&(objectCategory=user)(|(cn={0})(sAMAccountName={1}))))", user.Name, loginName), properties);
 
             if (results.Count != 1)
             {
