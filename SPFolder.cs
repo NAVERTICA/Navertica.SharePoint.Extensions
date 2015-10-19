@@ -49,7 +49,7 @@ namespace Navertica.SharePoint.Extensions
         {
             if (folder == null) throw new ArgumentNullException("folder");
 
-            //Check na samotnem folderu
+            // check folder itself
             foreach (SPWorkflow wf in folder.Item.Workflows)
             {
                 if (wf.InternalState != SPWorkflowState.Cancelled && !wf.IsCompleted)
@@ -124,11 +124,8 @@ namespace Navertica.SharePoint.Extensions
                 newItemUrl += folder.Url + "/" + filename;
             else
                 newItemUrl += "/" + folder.Url + "/" + filename;
-
-            folder.Files.Add(newItemUrl, data, overwrite);
-            SPListItem newItem = folder.ParentWeb.GetListItem(newItemUrl);
-
-            return newItem;
+            
+            return folder.Files.Add(newItemUrl, data, overwrite).Item;
         }
 
         /// <summary>
@@ -144,6 +141,8 @@ namespace Navertica.SharePoint.Extensions
             if (string.IsNullOrEmpty(path)) throw new ArgumentValidationException("path", "Cannot be null nor empty");
 
             // TODO path name normalization
+            if (path.Trim().ContainedIn(new string[] {"", "\\", "/"})) return folder;
+
             string[] folders = path.Split("/");
             SPFolder result = folder;
             bool first = true;
@@ -176,8 +175,7 @@ namespace Navertica.SharePoint.Extensions
                     if (nextFolder == null)
                     {
                         SPList list = folder.ParentWeb.OpenList(folder.ParentListId);
-                        SPListItem newFolderItem = list.Items.Add(result.ServerRelativeUrl,
-                            SPFileSystemObjectType.Folder, folderName);
+                        SPListItem newFolderItem = list.Items.Add(result.ServerRelativeUrl, SPFileSystemObjectType.Folder, folderName);
                         newFolderItem["Title"] = originalFolderName;
                         if (list.ContainsFieldIntName("FileLeafRef")) newFolderItem["FileLeafRef"] = originalFolderName;
                         newFolderItem.Update();
