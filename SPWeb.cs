@@ -396,6 +396,9 @@ namespace Navertica.SharePoint.Extensions
                 case "SPUser":
                     return (SPUser) identification;
 
+                case "SPFieldUserValue":
+                    return ( (SPFieldUserValue) identification ).User;
+
                 case "SPFieldUserValueCollection":
                     SPFieldUserValueCollection usrcol = (SPFieldUserValueCollection) identification;
                     return usrcol.Count == 1 ? GetSPUser(web, usrcol[0]) : null;
@@ -504,6 +507,16 @@ namespace Navertica.SharePoint.Extensions
 
                 case "SPUser":
                     return null;
+
+                case "SPFieldUserValue":
+                    try
+                    {
+                        return web.SiteGroups.GetByID(( (SPFieldUserValue) identification ).LookupId);
+                    }
+                    catch (Exception)
+                    {
+                        return null;
+                    }
 
                 case "SPFieldUserValueCollection":
                 case "SPRoleAssignmentCollection":
