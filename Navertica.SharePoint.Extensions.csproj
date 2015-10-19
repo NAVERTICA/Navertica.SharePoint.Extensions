@@ -54,8 +54,11 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Classes\Types.cs" />
+    <Compile Include="Classes\DictionaryNVR.cs" />
     <Compile Include="Classes\Exceptions.cs" />
     <Compile Include="Classes\QueryTools.cs" />
+    <Compile Include="Classes\SimpleSPLookup.cs" />
+    <Compile Include="Classes\SimpleSPPrincipal.cs" />
     <Compile Include="Classes\SPEventManagerWrapper.cs" />
     <Compile Include="Classes\UserComparers.cs" />
     <Compile Include="Classes\WebListItemDictionary.cs" />
