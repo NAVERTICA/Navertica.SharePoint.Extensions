@@ -619,7 +619,7 @@ namespace Navertica.SharePoint.Extensions
 
         public static string GetDateTimeString(this SPListItem item, string internalName, SPUser user, bool incudeTime = false)
         {
-            DateTime? date = (DateTime?) item[internalName];
+            DateTime? date = (DateTime?) item.Get(internalName);
             if (date == null) return "";
 
             return ( (DateTime) date ).ToStringLocalized(incudeTime, user.GetPreferredLanguage());
