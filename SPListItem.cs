@@ -1,4 +1,4 @@
-﻿/*  Copyright (C) 2014 NAVERTICA a.s. http://www.navertica.com 
+﻿/*  Copyright (C) 2015 NAVERTICA a.s. http://www.navertica.com 
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -20,46 +20,28 @@ using System.Data;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Web;
+using System.Web.Caching;
 using Microsoft.SharePoint;
 using Microsoft.SharePoint.Utilities;
-using System.Web.Caching;
-using System.Web;
 
 namespace Navertica.SharePoint.Extensions
 {
-    // ReSharper disable once PartialTypeWithSinglePart
     public static partial class SPListItemExtensions
     {
-     
         /// <summary>
-        /// Copy any item to a target list's root folder.
+        /// Copy any item to a target folder - complete with metadata and attachments. Fields have to have matching InternalNames and similar enough types.
+        /// If the item is a folder, it will try to copy all its children too.
         /// </summary>
         /// <param name="item">Original item</param>
-        /// <param name="targetList">Target list</param>
-        /// <param name="deleteOriginal">True to delete original item after successful copy</param>
-        /// <param name="overwriteExisting">True to overwrite existing - if no queryStr is used, will look for existing items using filename in libraries and Title in lists</param>
-        /// <param name="additional">Optional additional values to set in the copied item - keys are field internal names</param>
-        /// <param name="queryStr">Optional CAML query string to find existing item(s), and overwrite the first one</param>
-        /// <returns>Copied SPListItem or null</returns>
-        public static SPListItem CopyTo(this SPListItem item, SPList targetList, bool deleteOriginal = false, bool overwriteExisting = false, DictionaryNVR additional = null, string queryStr = "")
-        {
-            if (item == null) throw new ArgumentNullException("item");
-            if (targetList == null) throw new ArgumentNullException("targetList");
-
-            return CopyTo(item, targetList.RootFolder, deleteOriginal, overwriteExisting, additional, queryStr);
-        }
-
-        /// <summary>
-        /// Copy any item to a target list's root folder - complete with metadata and attachments. Fields have to have matching InternalNames and similar enough types.
-        /// </summary>
-        /// <param name="item">Original item</param>
-        /// <param name="toFolder">Target folder</param>
-        /// <param name="deleteOriginal">True to delete original item after successful copy</param>
-        /// <param name="overwriteExisting">True to overwrite existing - if no queryStr is used, will look for existing item using filename in libraries and Title in lists</param>
-        /// <param name="additional">Optional additional metadata fields to set in the copied item - keys are field internal names</param>
-        /// <param name="queryStr">Optional CAML query string to find existing item and overwrite it, if there are more then one, ConstraintException will be thrown</param>
+        /// <param name="toFolder">Target folder - for example yourSPList.RootFolder</param>
+        /// <param name="deleteOriginal">True to delete original item after successful copy</param>	
+        /// <param name="overwrite">True to overwrite existing item (always ON for folders)</param>	
+        /// <param name="additional">Optional additional metadata fields to set in the copied item - keys are field internal names, can be used to replace copied metadata</param>
+        /// <param name="queryStr">Custom Lists only - optional CAML query string to find existing item and overwrite it. By default Title will be used. If there's more then one item, 
+        /// ConstraintException will be thrown</param>
         /// <returns></returns>
-        public static SPListItem CopyTo(this SPListItem item, SPFolder toFolder, bool deleteOriginal = false, bool overwriteExisting = false, DictionaryNVR additional = null, string queryStr = "")
+        public static SPListItem CopyToFolder(this SPListItem item, SPFolder toFolder, bool deleteOriginal = false, bool overwrite = false, DictionaryNVR additional = null, string queryStr = null)
         {
             if (item == null) throw new ArgumentNullException("item");
             if (toFolder == null) throw new ArgumentNullException("toFolder");
@@ -67,7 +49,6 @@ namespace Navertica.SharePoint.Extensions
             using (new SPMonitoredScope(item.ID + " - " + item.Title + "CopyTo() - " + toFolder.ServerRelativeUrl))
             {
                 SPListItem newItem = null;
-                bool itemHasToBeUpdated = false;
 
                 SPList sourceList = item.ParentList;
                 SPList targetList = toFolder.ParentWeb.OpenList(toFolder.ParentListId, true);
@@ -75,84 +56,14 @@ namespace Navertica.SharePoint.Extensions
                 string targetType = targetList.GetType().FullName;
 
                 if (sourceType != targetType)
-                    throw new ArgumentException("Can not copy item of type item " + sourceType + " to list of type " + targetType);
+                    throw new ArgumentException("Can not copy item of type item " + sourceType + " to list of type " +
+                                                targetType);
                 if (additional != null && !targetList.ContainsFieldIntName(additional.Keys))
                     throw new SPFieldNotFoundException(targetList, additional.Keys);
 
-                #region create item or find existing to overwrite
+                #region prepare metadata to copy
 
-                // try to find existing item(s) if there's no query specified
-                if (overwriteExisting)
-                {
-                    SPListItemCollection col;
-                    if (string.IsNullOrEmpty(queryStr))
-                    {
-                        if (item.File != null) // in doc library use filename
-                        {
-                            col = targetList.GetItemsByTextField("FileLeafRef", item.Name);
-                        }
-                        else // custom list - use title
-                        {
-                            col = targetList.GetItemsByTextField("Title", item.Title);
-                        }
-                    }
-                    else
-                    {
-                        // when there is query, use query
-                        col = targetList.GetItemsQuery(queryStr);
-                        if (col == null)
-                        {
-                            throw new FileNotFoundException("by " + queryStr + " was not selected any Item!");
-                        }
-                    }
-                    if (col != null)
-                    {
-                        if (col.Count == 1) newItem = col[0];
-                        else if (col.Count > 1) throw new ConstraintException("Non unique list item found");
-                    }
-                }
-
-                if (newItem == null || item.File != null)
-                {
-                    toFolder.ParentWeb.RunWithAllowUnsafeUpdates(delegate
-                    {
-                        if (item.Folder != null) //folder
-                        {
-                            itemHasToBeUpdated = true;
-
-                            string folderName = toFolder.ServerRelativeUrl + "/" + item.Folder.Name !=
-                                                item.Folder.ServerRelativeUrl
-                                ? item.Folder.Name
-                                : "Duplicate - " + item.Folder.Name;
-                            newItem = targetList.Items.Add(toFolder.ServerRelativeUrl, SPFileSystemObjectType.Folder, folderName);
-                        }
-                        else if (item.File != null) //doc library file
-                        {
-                            itemHasToBeUpdated = false;
-
-                            string folderName = item.File.ServerRelativeUrl.Replace(item.File.Name, "");
-                            SPFolder fileFolder = item.ParentList.GetFolder(folderName);
-                            string filename = toFolder.UniqueId != fileFolder.UniqueId
-                                ? item.File.Name
-                                : "Duplicate - " + item.File.Name; // copying to the same folder
-
-                            newItem = toFolder.CreateOrUpdateDocument(filename, item.File.OpenBinary(), overwriteExisting);
-                        }
-                        else // custom list item
-                        {
-                            itemHasToBeUpdated = true;
-                            newItem = targetList.Items.Add(toFolder.ServerRelativeUrl, SPFileSystemObjectType.File, null);
-                        }
-                    });
-
-                    newItem["ContentTypeId"] = item.ContentType.Parent.Id;
-
-                    // SPListDataValidationException can get thrown here                    
-                }
-
-                #endregion
-
-                #region Copy metadata
+                DictionaryNVR metadata = new DictionaryNVR();
 
                 // copy metadata - expects fields have the same name and matching (or similar enough) types
                 // tries to get values also from hidden and computed fields
@@ -196,35 +107,18 @@ namespace Navertica.SharePoint.Extensions
                                 {
                                     string text = item.GetVersionedMultiLineTextAsHtml(field.InternalName);
 
-                                    if (newItem[field.InternalName] != null &&
-                                        newItem[field.InternalName].ToString() != text)
-                                    {
-                                        itemHasToBeUpdated = true;
-                                    }
-                                    newItem[field.InternalName] = text;
+                                    metadata[field.InternalName] = text;
                                 }
                                 else
                                 {
                                     string text = item.GetVersionedMultiLineTextAsPlainText(field.InternalName);
 
-                                    if (newItem[field.InternalName] != null &&
-                                        newItem[field.InternalName].ToString() != text)
-                                    {
-                                        itemHasToBeUpdated = true;
-                                    }
-                                    newItem[field.InternalName] = text;
+                                    metadata[field.InternalName] = text;
                                 }
                             }
                             else
                             {
-                                if (newItem[field.InternalName] != null &&
-                                    newItem[field.InternalName].GetHashCode() != item[field.InternalName].GetHashCode() &&
-                                    field.InternalName != "ContentType")
-                                {
-                                    itemHasToBeUpdated = true;
-                                }
-                                // TODO will have to be replaced with Get/Set extensions
-                                newItem[field.InternalName] = item[field.InternalName];
+                                metadata[field.InternalName] = item[field.InternalName];
                             }
                         }
                     }
@@ -237,93 +131,120 @@ namespace Navertica.SharePoint.Extensions
                     }
                 }
 
-                #endregion
-
-                #region Attachment Copy
-
-                if (sourceType == SPListExtensions.SPListClassName)
-                {
-                    string attName = "";
-                    try
-                    {
-                        foreach (string fileName in item.Attachments)
-                        {
-                            attName = item.Attachments.UrlPrefix + fileName;
-
-                            SPFile file = sourceList.ParentWeb.GetFile(item.Attachments.UrlPrefix + fileName);
-
-                            bool contains = false;
-                            for (int i = 0; i < newItem.Attachments.Count; i++)
-                            {
-                                if (newItem.Attachments[i] == fileName)
-                                {
-                                    contains = true;
-                                    break;
-                                }
-                            }
-                            if (contains)
-                            {
-                                SPFile savedFile = sourceList.ParentWeb.GetFile(newItem.Attachments.UrlPrefix + fileName);
-
-                                if (!file.OpenBinary().SequenceEqual(savedFile.OpenBinary()))
-                                    // changed attachment 
-                                {
-                                    newItem.Attachments.Delete(fileName); //delete the existing one
-
-                                    newItem.Attachments.Add(fileName, file.OpenBinary()); //... add the new one
-                                    itemHasToBeUpdated = true;
-                                }
-                            }
-                            else
-                            {
-                                itemHasToBeUpdated = true;
-                                newItem.Attachments.Add(fileName, file.OpenBinary());
-                            }
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        throw new Exception("Copy attachment problem - " + attName + "\n" + ex);
-                    }
-                }
-
-                #endregion
-
-                #region Additional Copy
+                metadata["ContentTypeId"] = item.ContentType.Parent.Id;
 
                 if (additional != null) // add additional data
                 {
                     foreach (KeyValuePair<string, object> kvp in additional)
                     {
-                        if (newItem[kvp.Key] == null)
-                        {
-                            newItem[kvp.Key] = kvp.Value;
-                        }
-                        else if (newItem[kvp.Key].GetHashCode() != kvp.Value.ToString().GetHashCode())
-                        {
-                            newItem[kvp.Key] = kvp.Value;
-                            itemHasToBeUpdated = true;
-                        }
+                        metadata[kvp.Key] = kvp.Value;
                     }
                 }
 
                 #endregion
 
-                if (itemHasToBeUpdated)
+                toFolder.ParentWeb.RunWithAllowUnsafeUpdates(delegate
                 {
-                    try
+                    #region copy folder
+                    if (item.Folder != null) //folder
                     {
-                        newItem.Web.RunWithAllowUnsafeUpdates(newItem.Update);
+                        string folderName = toFolder.ServerRelativeUrl + "/" + item.Folder.Name !=
+                                            item.Folder.ServerRelativeUrl
+                            ? item.Folder.Name
+                            : "Duplicate - " + item.Folder.Name;
+
+                        newItem = targetList.Items.Add(toFolder.ServerRelativeUrl, SPFileSystemObjectType.Folder, folderName);
+
+                        newItem.Set(metadata);
+                        newItem.Update();
                     }
-                    catch (Exception exc)
+                    #endregion
+                    #region copy list item
+                    else if (item.File == null) // custom lists
                     {
-                        throw new Exception("Update Fail\n\n" + exc);
+                        // try to find existing unique custom list item using given query or by Title
+                        SPListItemCollection col = null;
+                        col = string.IsNullOrEmpty(queryStr)
+                            ? targetList.GetItemsByTextField("Title", item.Title)
+                            : targetList.GetItemsQuery(queryStr);
+                        if (col != null)
+                        {
+                            if (col.Count == 1)
+                            {
+                                if (!overwrite) return;
+                                newItem = col[0];
+                            }
+                            else if (col.Count > 1)
+                                throw new ConstraintException("Non unique list items found using query " + (queryStr ?? "by Title"));
+                        }
+
+                        if (newItem == null)
+                        {
+                            newItem = targetList.AddItem(toFolder.ServerRelativeUrl, SPFileSystemObjectType.File);
+                        }
+
+                        newItem.Set(metadata);
+                        #region Attachment Copy
+
+                        if (sourceType == SPListExtensions.SPListClassName)
+                        {
+                            string attName = "";
+                            try
+                            {
+                                foreach (string fileName in item.Attachments)
+                                {
+                                    attName = item.Attachments.UrlPrefix + fileName;
+
+                                    SPFile file = sourceList.ParentWeb.GetFile(item.Attachments.UrlPrefix + fileName);
+
+                                    bool contains = false;
+                                    for (int i = 0; i < newItem.Attachments.Count; i++)
+                                    {
+                                        if (newItem.Attachments[i] == fileName)
+                                        {
+                                            contains = true;
+                                            break;
+                                        }
+                                    }
+                                    if (contains)
+                                    {
+                                        SPFile savedFile = sourceList.ParentWeb.GetFile(newItem.Attachments.UrlPrefix + fileName);
+
+                                        if (!file.OpenBinary().SequenceEqual(savedFile.OpenBinary()))
+                                        // changed attachment 
+                                        {
+                                            newItem.Attachments.Delete(fileName); //delete the existing one
+
+                                            newItem.Attachments.Add(fileName, file.OpenBinary()); //... add the new one
+                                        }
+                                    }
+                                    else
+                                    {
+                                        newItem.Attachments.Add(fileName, file.OpenBinary());
+                                    }
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                throw new Exception("Copy attachment problem - " + attName + "\n" + ex);
+                            }
+                        }
+
+                        #endregion
+                        newItem.Update();
                     }
-                }
+                    #endregion
+                    #region copy doc library file
+                    else
+                    {
+                        newItem = toFolder.CreateOrUpdateDocument(item.File.Name, item.File.OpenBinary(), metadata, overwrite);
+                    }
+                    #endregion
+                });
 
                 try
                 {
-                    if (deleteOriginal) item.Web.RunWithAllowUnsafeUpdates(() => item.Recycle()); // delete the original item
+                    if (newItem != null && deleteOriginal) item.Web.RunWithAllowUnsafeUpdates(() => item.Recycle()); // delete the original item
                 }
                 catch (Exception exc)
                 {
@@ -333,15 +254,230 @@ namespace Navertica.SharePoint.Extensions
                                         exc);
                 }
 
-                if (item.IsFolder())
+                if (newItem != null && item.IsFolder())
                 {
                     item.Folder.ProcessItems(delegate(SPListItem it)
                     {
-                        it.CopyTo(newItem.Folder, deleteOriginal, overwriteExisting, additional, queryStr);
+                        it.CopyToFolder(newItem.Folder, deleteOriginal, overwrite, additional, queryStr);
                         return null;
                     });
                 }
 
+                return newItem;
+            }
+        }
+
+        /// <summary>
+        /// Copy an older version of an item to a target folder - complete with metadata and attachments (attachments are not versioned, so they will be the CURRENT attachments). 
+        /// Fields have to have matching InternalNames and similar enough types.
+        /// </summary>
+        /// <param name="item">Version of the item to be copied</param>
+        /// <param name="toFolder">Target folder - for example yourSPList.RootFolder</param>
+        /// <param name="overwrite">True to overwrite existing item (always ON for folders)</param>	
+        /// <param name="additional">Optional additional metadata fields to set in the copied item - keys are field internal names, can be used to replace copied metadata</param>
+        /// <param name="queryStr">Custom Lists only - optional CAML query string to find existing item and overwrite it. By default Title will be used. If there's more then one item, 
+        /// ConstraintException will be thrown</param>
+        /// <returns></returns>
+        public static SPListItem CopyToFolder(this SPListItemVersion item, SPFolder toFolder, bool overwrite = false, DictionaryNVR additional = null, string queryStr = "")
+        {
+            if (item == null) throw new ArgumentNullException("item");
+            if (toFolder == null) throw new ArgumentNullException("toFolder");
+
+            using (new SPMonitoredScope(item.ListItem.ID + " - " + item["Title"] + " version " + item.VersionId + " CopyTo() - " + toFolder.ServerRelativeUrl))
+            {
+                SPListItem newItem = null;
+
+                SPList sourceList = item.ListItem.ParentList;
+                SPList targetList = toFolder.ParentWeb.OpenList(toFolder.ParentListId, true);
+                string sourceType = sourceList.GetType().FullName;
+                string targetType = targetList.GetType().FullName;
+
+                if (sourceType != targetType)
+                    throw new ArgumentException("Can not copy item of type item " + sourceType + " to list of type " +
+                                                targetType);
+                if (additional != null && !targetList.ContainsFieldIntName(additional.Keys))
+                    throw new SPFieldNotFoundException(targetList, additional.Keys);
+
+                #region prepare metadata to copy
+
+                DictionaryNVR metadata = new DictionaryNVR();
+
+                // copy metadata - expects fields have the same name and matching (or similar enough) types
+                // tries to get values also from hidden and computed fields
+                for (int i = 0; i < sourceList.Fields.Count; i++)
+                {
+                    SPField field;
+                    try
+                    {
+                        field = sourceList.Fields[i];
+                    }
+                    catch (Exception) // nonvalid field
+                    {
+                        throw new Exception("Cannot get field from list, probably badly installed nonvalid field");
+                    }
+
+                    object fieldValue;
+
+                    try
+                    {
+                        fieldValue = item[field.InternalName];
+                    }
+                    catch (Exception) // nonvalid field
+                    {
+                        throw new SPFieldNotFoundException(sourceList, field.InternalName,
+                            "Cannot get value from item. Probably nonvalid field (lookup?): " + field.InternalName);
+                    }
+
+                    if (fieldValue == null) continue; // nothing to copy
+
+                    try
+                    {
+                        if (targetList.ContainsFieldIntName(field.InternalName)
+                            && !targetList.Fields.GetFieldByInternalName(field.InternalName).ReadOnlyField
+                            && item[field.InternalName] != null
+                            && !field.InternalName.EqualAny(new[] { "Attachments", "Order", "FileLeafRef", "MetaInfo" }))
+                        {
+                            // versioned text field
+                            if (field.TypeAsString == "Note" && field.SchemaXml.Contains(@"AppendOnly=""TRUE"""))
+                            {
+                                if (field.SchemaXml.Contains(@"RichText=""TRUE"""))
+                                {
+                                    string text = item.GetVersionedMultiLineTextAsHtml(field.InternalName);
+
+                                    metadata[field.InternalName] = text;
+                                }
+                                else
+                                {
+                                    string text = item.GetVersionedMultiLineTextAsPlainText(field.InternalName);
+
+                                    metadata[field.InternalName] = text;
+                                }
+                            }
+                            else
+                            {
+                                metadata[field.InternalName] = item[field.InternalName];
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        throw new Exception("CopyTo  - Item:" + item["Title"] + " [" + item.ListItem.ID + "] field: '" +
+                                            field.Title + "' [" + field.InternalName +
+                                            "]  problem - perhaps insufficient permissions?\n\n Original Exception:" +
+                                            ex);
+                    }
+                }
+
+                metadata["ContentTypeId"] = item.ListItem.ContentType.Parent.Id;
+
+                if (additional != null) // add additional data
+                {
+                    foreach (KeyValuePair<string, object> kvp in additional)
+                    {
+                        metadata[kvp.Key] = kvp.Value;
+                    }
+                }
+
+                #endregion
+
+                toFolder.ParentWeb.RunWithAllowUnsafeUpdates(delegate
+                {
+                    #region copy folder
+                    if (item.ListItem.Folder != null) //folder
+                    {
+                        string folderName = toFolder.ServerRelativeUrl + "/" + item.ListItem.Folder.Name !=
+                                            item.ListItem.Folder.ServerRelativeUrl
+                            ? item.ListItem.Folder.Name
+                            : "Duplicate - " + item.ListItem.Folder.Name;
+
+                        newItem = targetList.AddItem(toFolder.ServerRelativeUrl, SPFileSystemObjectType.Folder, folderName);
+
+                        newItem.Set(metadata);
+                        newItem.Update();
+                    }
+                    #endregion
+                    # region copy list item
+                    else if (item.ListItem.File == null) // custom lists
+                    {
+                        // try to find existing unique custom list item using given query or by Title
+                        SPListItemCollection col = null;
+                        col = string.IsNullOrEmpty(queryStr)
+                            ? targetList.GetItemsByTextField("Title", item["Title"].ToString())
+                            : targetList.GetItemsQuery(queryStr);
+                        if (col != null)
+                        {
+                            if (col.Count == 1)
+                            {
+                                if (!overwrite) return;
+                                newItem = col[0];
+                            }
+                            else if (col.Count > 1)
+                                throw new ConstraintException("Non unique list items found using query " + (queryStr ?? "by Title"));
+                        }
+
+                        if (newItem == null)
+                        {
+                            newItem = targetList.AddItem(toFolder.ServerRelativeUrl, SPFileSystemObjectType.File);
+                        }
+
+                        newItem.Set(metadata);
+                        #region Attachment Copy
+
+                        if (sourceType == SPListExtensions.SPListClassName)
+                        {
+                            string attName = "";
+                            try
+                            {
+                                foreach (string fileName in item.ListItem.Attachments)
+                                {
+                                    attName = item.ListItem.Attachments.UrlPrefix + fileName;
+
+                                    SPFile file = sourceList.ParentWeb.GetFile(item.ListItem.Attachments.UrlPrefix + fileName);
+
+                                    bool contains = false;
+                                    for (int i = 0; i < newItem.Attachments.Count; i++)
+                                    {
+                                        if (newItem.Attachments[i] == fileName)
+                                        {
+                                            contains = true;
+                                            break;
+                                        }
+                                    }
+                                    if (contains)
+                                    {
+                                        SPFile savedFile = sourceList.ParentWeb.GetFile(newItem.Attachments.UrlPrefix + fileName);
+
+                                        if (!file.OpenBinary().SequenceEqual(savedFile.OpenBinary()))
+                                        // changed attachment 
+                                        {
+                                            newItem.Attachments.Delete(fileName); //delete the existing one
+
+                                            newItem.Attachments.Add(fileName, file.OpenBinary()); //... add the new one
+                                        }
+                                    }
+                                    else
+                                    {
+                                        newItem.Attachments.Add(fileName, file.OpenBinary());
+                                    }
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                throw new Exception("Copy attachment problem - " + attName + "\n" + ex);
+                            }
+                        }
+
+                        #endregion
+                        newItem.Update();
+                    }
+                    #endregion
+                    #region copy doc library file
+                    else
+                    {
+                        newItem = toFolder.CreateOrUpdateDocument(item.FileVersion.File.Name, item.FileVersion.OpenBinary(), metadata, overwrite);
+                    }
+                    #endregion
+                });
 
                 return newItem;
             }
