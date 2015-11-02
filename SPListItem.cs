@@ -683,15 +683,8 @@ namespace Navertica.SharePoint.Extensions
             {
                 using (SPWeb lookupWeb = list.ParentWeb.Site.OpenW(( (SPFieldLookup) lookupField ).LookupWebId, true))
                 {
-                    try
-                    {
-                        SPList lookupList = lookupWeb.OpenList(((SPFieldLookup) lookupField).LookupList, true);
-                        result = new WebListId(lookupList);
-                    }
-                    catch (Exception listExc)
-                    {
-                        result.InvalidMessage = listExc.ToString();
-                    }
+                    SPList lookupList = lookupWeb.OpenList(( (SPFieldLookup) lookupField ).LookupList, true);
+                    result = new WebListId(lookupList);
                 }
             }
             catch (Exception webExc)
