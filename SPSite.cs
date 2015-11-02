@@ -396,7 +396,6 @@ namespace Navertica.SharePoint.Extensions
                     return null;
                 }
 
-                //i pri nesmyslu vraci objekt + nemusime davat presnou url ale muzeme ji dat neco ve tvaru: url/ + NewForm.aspx?Source=http%3A.....
                 webText = webText.Replace(site.Url, "").Trim();
 
                 bool dispose = false;
@@ -409,7 +408,7 @@ namespace Navertica.SharePoint.Extensions
                     {
                         web = site.OpenWeb(webText, requireExactUrl);
                     }
-                    catch (ArgumentException) //jeste je tu moznost otevrit web bez prvniho lomitka
+                    catch (ArgumentException) 
                     {
                         if (webText.StartsWith("/"))
                         {
@@ -418,12 +417,12 @@ namespace Navertica.SharePoint.Extensions
                         }
                     }
 
-                    // ReSharper disable UnusedVariable
-                    // ReSharper disable PossibleNullReferenceException
-                    string webTitle = web.Title; //zpusobi bud UnauthorizedAccessException nebo FileNotFoundException
-                    // ReSharper restore PossibleNullReferenceException
-                    // ReSharper restore UnusedVariable
-                    if (web.Exists) return web;
+                    if (web != null)
+                    {
+                        // ReSharper disable once UnusedVariable
+                        string webTitle = web.Title; // web can be not null and at the same time throw either UnauthorizedAccessException or FileNotFoundException
+                        if (web.Exists) return web;
+                    }
                 }
                 catch (UnauthorizedAccessException)
                 {
