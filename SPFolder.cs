@@ -13,8 +13,24 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.  */
+/*  Copyright (C) 2014 NAVERTICA a.s. http://www.navertica.com 
+
+    This program is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.  */
 
 using System;
+using System.Collections;
 using System.Linq;
 using System.IO;
 using Microsoft.SharePoint;
@@ -37,7 +53,7 @@ namespace Navertica.SharePoint.Extensions
             if (folders == null) throw new ArgumentNullException("folders");
             if (folderName == null) throw new ArgumentNullException("folderName");
 
-            return folders.Cast<SPFolder>().Any(( f => f.Name == folderName ));
+            return folders.Cast<SPFolder>().Any((f => f.Name == folderName));
         }
 
         /// <summary>
@@ -91,17 +107,17 @@ namespace Navertica.SharePoint.Extensions
         /// </summary>
         /// <param name="folder">Folder to copy</param>
         /// <param name="toFolder">Target folder</param>
-        /// <param name="deleteOriginal">True to delete original folder after successful copy</param>
-        /// <param name="overwriteExisting">True to overwrite existing - if no queryStr is used, will look for the existing folder using filename in libraries and Title in lists</param>
+        /// <param name="deleteOriginal">True to delete original item after successful copy</param>	
+        /// <param name="overwrite">True to overwrite existing item (always ON for folders)</param>	
         /// <param name="additional">Optional additional metadata fields to set in the copied folder - keys are field internal names</param>
         /// <param name="queryStr">Optional CAML query string to find existing folder to overwrite</param>
         /// <returns></returns>
-        public static SPListItem CopyTo(this SPFolder folder, SPFolder toFolder, bool deleteOriginal = false, bool overwriteExisting = false, DictionaryNVR additional = null, string queryStr = "")
+        public static SPListItem CopyToFolder(this SPFolder folder, SPFolder toFolder, bool deleteOriginal = false, bool overwrite = false, DictionaryNVR additional = null, string queryStr = "")
         {
             if (folder == null) throw new ArgumentNullException("folder");
             if (toFolder == null) throw new ArgumentNullException("toFolder");
 
-            return folder.Item.CopyTo(toFolder, deleteOriginal, overwriteExisting, additional, queryStr);
+            return folder.Item.CopyToFolder(toFolder, deleteOriginal, overwrite, additional, queryStr);
         }
 
         /// <summary>
@@ -112,7 +128,7 @@ namespace Navertica.SharePoint.Extensions
         /// <param name="data"></param>
         /// <param name="overwrite"></param>
         /// <returns>newly created SPListItem</returns>
-        public static SPListItem CreateOrUpdateDocument(this SPFolder folder, string filename, byte[] data, bool overwrite = false)
+        public static SPListItem CreateOrUpdateDocument(this SPFolder folder, string filename, byte[] data, IDictionary<string, object> properties = null, bool overwrite = false)
         {
             if (folder == null) throw new ArgumentNullException("folder");
             if (filename == null) throw new ArgumentNullException("filename");
@@ -124,8 +140,52 @@ namespace Navertica.SharePoint.Extensions
                 newItemUrl += folder.Url + "/" + filename;
             else
                 newItemUrl += "/" + folder.Url + "/" + filename;
-            
-            return folder.Files.Add(newItemUrl, data, overwrite).Item;
+
+            Hashtable metadata = new Hashtable();
+            var fields = folder.ParentWeb.OpenList(folder.ParentListId).Fields;
+            // only string, int and DateTime allowed in properties Hashtable
+            // lookups have to be number only
+            foreach (var kvp in properties)
+            {
+                string key = kvp.Key;
+                object val = kvp.Value;
+                if (val == null)
+                {
+                    metadata[key] = null;
+                    continue;
+                }
+                if (val is string)
+                {
+                    var fld = fields.GetFieldByInternalName(key);
+                    if (fld.IsLookup())
+                    {
+                        metadata[key] = val.ToString().GetLookupIndexes().JoinStrings(";");
+                    }
+                    else
+                    {
+                        metadata[key] = val as string;
+                    }
+                    continue;
+                }
+                if (val is DateTime)
+                {
+                    metadata[key] = (DateTime)val;
+                    continue;
+                }
+                if (val is int)
+                {
+                    metadata[key] = (int)val;
+                    continue;
+                }
+                if (val is bool)
+                {
+                    metadata[key] = (bool)val ? 1 : 0;
+                    continue;
+                }
+                metadata[key] = val.ToString();
+            }
+
+            return folder.Files.Add(newItemUrl, data, metadata, overwrite).Item;
         }
 
         /// <summary>
@@ -140,8 +200,7 @@ namespace Navertica.SharePoint.Extensions
             if (folder == null) throw new ArgumentNullException("folder");
             if (string.IsNullOrEmpty(path)) throw new ArgumentValidationException("path", "Cannot be null nor empty");
 
-            // TODO path name normalization
-            if (path.Trim().ContainedIn(new string[] {"", "\\", "/"})) return folder;
+            if (path.Trim().ContainedIn(new string[] { "", "\\", "/" })) return folder;
 
             string[] folders = path.Split("/");
             SPFolder result = folder;
