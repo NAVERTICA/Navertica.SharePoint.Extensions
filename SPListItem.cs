@@ -1322,5 +1322,57 @@ namespace Navertica.SharePoint.Extensions
 
             return result;
         }
+
+        /// <summary>
+        /// Gets SPListItem and list of internal names of lookup fields to traverse. First name is in the startItem's list, second name is in the 
+        /// list of the lookup, third in the list of the second lookup, etc.
+        /// </summary>
+        /// <param name="startItem">Item in which the first lookup resides</param>
+        /// <param name="fieldNames">List of internal field names for lookup fields</param>
+        /// <param name="data">For recursion</param>
+        /// <returns>Returns the last item identification, or, in case one of the fields is empty, identification of the last valid item.</returns>
+        /// <exception cref="SPFieldNotFoundException">In case one of the fields is not found or not a lookup</exception>
+        public static WebListItemDictionary TraverseItemLookups(this SPListItem startItem, List<string> fieldNames, WebListItemDictionary data = null)
+        {
+            if (data == null) 
+            {
+                data = new WebListItemDictionary(new WebListItemId(startItem));
+            }
+
+            WebListItemDictionary wliCurrent = new WebListItemDictionary();
+
+            data.ProcessItems(startItem.Web.Site, delegate(SPListItem item)
+            {
+                SPField field = item.ParentList.OpenField(fieldNames.First());
+
+                if (field.IsLookup())
+                {
+                    item.GetItemsFromLookup(field.InternalName)
+                        .ProcessItems(item.Web.Site, delegate(SPListItem lookupItem)
+                        {
+                            wliCurrent.Add(new WebListItemId(lookupItem));
+
+                            return null;
+                        });
+                }
+                else
+                {
+                    throw new SPFieldNotFoundException(item.ParentList, field.InternalName, "Field is not a Lookup");
+                }
+
+                return null;
+
+            });
+
+            if (fieldNames.Count == 1)
+            {
+                return wliCurrent;
+            }
+
+            var fieldsTorecursion = new List<string>(fieldNames);
+            fieldsTorecursion.RemoveAt(0);
+
+            return TraverseItemLookups(startItem, fieldsTorecursion, wliCurrent);
+        }
     }
 }
