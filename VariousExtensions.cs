@@ -19,6 +19,8 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Reflection;
+using System.Runtime.CompilerServices;
 using Microsoft.SharePoint;
 
 namespace Navertica.SharePoint.Extensions
@@ -237,6 +239,53 @@ namespace Navertica.SharePoint.Extensions
 
             if (incudeTime) result += " " + dateTime.ToString(format.ShortTimePattern);
             return result;
+        }
+
+        /// <summary>
+        /// Extends System.Type to get all extension methods. It searches all assemblies which are known by the current AppDomain.
+        /// </summary>
+        /// <remarks>
+        /// Insired by Jon Skeet from his answer on http://stackoverflow.com/questions/299515/c-sharp-reflection-to-identify-extension-methods
+        /// </remarks>
+        /// <returns>returns MethodInfo[] with found extension methods</returns>
+        public static MethodInfo[] GetExtensionMethods(this Type t)
+        {
+            List<Type> assemblyTypes = new List<Type>();
+
+            var asss = AppDomain.CurrentDomain.GetAssemblies();
+            foreach (Assembly item in asss)
+            {
+                try
+                {
+                    assemblyTypes.AddRange(item.GetTypes());
+                }
+                catch (Exception) {}
+            }
+
+            var query = from type in assemblyTypes
+                where type.IsSealed && !type.IsGenericType && !type.IsNested
+                from method in type.GetMethods(BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic)
+                where method.IsDefined(typeof (ExtensionAttribute), false)
+                where method.GetParameters()[0].ParameterType == t
+                select method;
+
+            return query.ToArray();
+        }
+
+        /// <summary>
+        /// Extends System.Type to search for a given extension method name
+        /// </summary>
+        /// <param name="t"></param>
+        /// <param name="extMethodName">Name of the extension method</param>
+        /// <returns>the found method or null</returns>
+        public static MethodInfo GetExtensionMethod(this Type t, string extMethodName)
+        {
+            var mi = from extMethod in t.GetExtensionMethods() where extMethod.Name == extMethodName select extMethod;
+
+            if (!mi.Any())
+                return null;
+            
+            return mi.First();
         }
     }
 }
