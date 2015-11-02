@@ -1213,36 +1213,6 @@ namespace Navertica.SharePoint.Extensions
             }
         }
 
-        /// <summary>
-        /// Like SPListItem.Update(), but shouldn't trigger event receivers. Values to be updated can be passed in a dictionary
-        /// where key is the field internal name.
-        /// </summary>
-        /// <param name="item"></param>
-        /// <param name="increaseVersion"></param>
-        /// <param name="values"></param>
-        public static void ItemSystemUpdate(this SPListItem item, bool increaseVersion = false, DictionaryNVR values = null)
-        {
-            if (item == null) throw new ArgumentNullException("item");
-            if (values != null && !item.ParentList.ContainsFieldIntName(values.Keys)) throw new SPFieldNotFoundException(item.ParentList, values.Keys);
-
-            item.Web.RunWithAllowUnsafeUpdates(delegate
-            {
-                SPEventManagerWrapper.DisableEventFiring();
-
-                if (values != null)
-                {
-                    foreach (KeyValuePair<string, object> kvp in values)
-                    {
-                        item[kvp.Key] = kvp.Value;
-                    }
-                }
-
-                item.SystemUpdate(increaseVersion);
-
-                SPEventManagerWrapper.EnableEventFiring();
-            });
-        }
-
         #endregion
 
         /// <summary>
