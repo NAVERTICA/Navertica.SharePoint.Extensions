@@ -372,18 +372,11 @@ namespace Navertica.SharePoint.Extensions
                 {
                     securableObjectElevated.BreakRoleInheritance(true);
 
-                    principals = principals.ToList();
-
-                    for (int i = securableObjectElevated.RoleAssignments.Count - 1; i > -1; i--) // smazat aktuální role assignments
+                    foreach (SPPrincipal principal in principals.Where(p => p != null))
                     {
-                        foreach (SPPrincipal principal in principals)
-                        {
-                            if (securableObjectElevated.RoleAssignments[i].Member.ID == principal.ID)
-                            {
-                                securableObjectElevated.RoleAssignments.Remove(i);
-                            }
-                        }
+                        securableObjectElevated.RoleAssignments.RemoveById(principal.ID);
                     }
+
                     return null;
                 });
 
