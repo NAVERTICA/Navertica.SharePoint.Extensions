@@ -141,48 +141,51 @@ namespace Navertica.SharePoint.Extensions
             else
                 newItemUrl += "/" + folder.Url + "/" + filename;
 
-            Hashtable metadata = new Hashtable();
+            Hashtable metadata = new Hashtable();            
             var fields = folder.ParentWeb.OpenList(folder.ParentListId).Fields;
             // only string, int and DateTime allowed in properties Hashtable
             // lookups have to be number only
-            foreach (var kvp in properties)
+            if (properties != null)
             {
-                string key = kvp.Key;
-                object val = kvp.Value;
-                if (val == null)
+                foreach (var kvp in properties)
                 {
-                    metadata[key] = null;
-                    continue;
-                }
-                if (val is string)
-                {
-                    var fld = fields.GetFieldByInternalName(key);
-                    if (fld.IsLookup())
+                    string key = kvp.Key;
+                    object val = kvp.Value;
+                    if (val == null)
                     {
-                        metadata[key] = val.ToString().GetLookupIndexes().JoinStrings(";");
+                        metadata[key] = null;
+                        continue;
                     }
-                    else
+                    if (val is string)
                     {
-                        metadata[key] = val as string;
+                        var fld = fields.GetFieldByInternalName(key);
+                        if (fld.IsLookup())
+                        {
+                            metadata[key] = val.ToString().GetLookupIndexes().JoinStrings(";");
+                        }
+                        else
+                        {
+                            metadata[key] = val as string;
+                        }
+                        continue;
                     }
-                    continue;
+                    if (val is DateTime)
+                    {
+                        metadata[key] = (DateTime)val;
+                        continue;
+                    }
+                    if (val is int)
+                    {
+                        metadata[key] = (int)val;
+                        continue;
+                    }
+                    if (val is bool)
+                    {
+                        metadata[key] = (bool)val ? 1 : 0;
+                        continue;
+                    }
+                    metadata[key] = val.ToString();
                 }
-                if (val is DateTime)
-                {
-                    metadata[key] = (DateTime)val;
-                    continue;
-                }
-                if (val is int)
-                {
-                    metadata[key] = (int)val;
-                    continue;
-                }
-                if (val is bool)
-                {
-                    metadata[key] = (bool)val ? 1 : 0;
-                    continue;
-                }
-                metadata[key] = val.ToString();
             }
 
             return folder.Files.Add(newItemUrl, data, metadata, overwrite).Item;
