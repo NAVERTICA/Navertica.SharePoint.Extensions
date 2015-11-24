@@ -1,11 +1,11 @@
 NAVERTICA SharePoint Extensions (SSOM)
 ======================================
 
-A selection of extension methods for SharePoint 2013 server-side object model, trying to make SharePoint development less of a pain.
+A selection of extension methods for SharePoint 2013 server-side object model, trying to make SharePoint development less of a pain particularly when used with dynamic languages. 
 
+To see what we're doing with DLR (Dynamic Language Runtime) languages like IronPython, check out https://github.com/NAVERTICA/SPTools - with it you can use scripting to handle all kinds of SharePoint development and features, have all configurations available in a single place and functionalities activated in several places at once  with a simple URL routing with wildcards.
 
-
-Feedback, ideas, patches welcome. Further functionalities are upcoming, as well as some other toys and tools of ours.
+Feedback, ideas, patches welcome. 
 
 Less scaffolding, less coupling
 ==========================
@@ -16,28 +16,38 @@ We also tried to solve some of the coupling issues - you can't just pass anythin
 thread, so we're often working with our own classes like WebListId and WebListItemId, which contain the IDs of the required objects
 and method to transparently access them, without being bound to specific SPRequests.
 
-Another, much more daring, goal, which we have not reached by far, was to basically replace calls to SharePoint API with calls to our own extensions and 
-thus decouple our business code from SharePoint API, which should make it easier to replace the underlying SSOM with
+Another, much more daring, goal, which we have not reached by far and with the decline of SSOM probably never will, was to basically replace calls to SharePoint API with calls to our own extensions and 
+thus decouple our business code from SharePoint API, which should've made it easier to replace the underlying SSOM with
 something else in the future.
 
-For example, opening a web or list? 
-```csharp
-SPWeb web = site.OpenW(Url_Name_Guid_AsString, false /* don't throw exception */);
-if (web == null) logError("Couldn't open web " + UrlOrNameOrGuidAsString);
-SPList list = web.OpenList(Url_Name_InternalName_Guid_AsString, false);
-if (list == null) logError("Couldn't open list " + UrlOrNameOrInternalNameOrGuidAsString);
-```
-Similarly, we make it easier to 
+We make it easy to 
+- open webs, lists, process items, without having to care about opening and disposing SPRequest connected objects and without pondering "do I have to use a Guid, or was it internal name? Oh, in this case it was display name, damn these inconsistencies..."
 - copy or move items in both document libraries and custom lists - including metadata, attachments...
 - look up content types by both name and ID
 - check if fields with internal name exist in a list or content type
 - find lists by type or content type
-- ...
+- do a lot of other things you probably already needed or will need to do shortly, if you're a SharePoint developer.
 
-(Not yet included) Get and Set extensions, to read (and write, where possible) normalized values of SPListItems, SPListItemVersions,
+**Get and Set SPListItem extensions** can read (and write, where possible) normalized values of SPListItems, SPListItemVersions,
 SPItemEventProperties (for Event Receivers with AfterProperties). All the returned values look the same,
 whichever object they come from, and writing the values also works the same independent of whether the
 underlying object is an SPListItem or AfterProperties of an item in receiver.
+
+With Get and Set you can forget about having to do stuff like this:
+```csharp
+var myUsers = new SPFieldUserValueCollection();
+foreach (string usr in MyUserList) {
+	var usrValue = web.EnsureUser(usr);
+	myUsers.Add(new SPFieldUserValue(web, usrValue.ID, usrValue.Name));
+}
+item["MyUserField"] = myUsers;
+```
+And instead just do this:
+```csharp
+item.Set("MyUserField", MyUserList);
+```
+Similarly, you could pass an enumerable with logins, names, emails, IDs, even mixed, or just put it all in a long semicolon-separated
+string - it would still get processed just fine.
 
 Using delegates to process (not only) items
 ---------------------------------------
@@ -49,7 +59,7 @@ Now processing items returned by a CAML query can look like this:
 var titleCollection = list.ProcessItems(item => item["Title"], filterSPQuery);
 ```
 
-Need to process every file in a folder and it's subfolders, and perhaps filter them by a complex query?
+Need to process every file in a folder and it's subfolders, and perhaps filter them by a complex query? You can forget about manually throttling the query, and just do this:
 ```csharp
 var resultingNumberFieldValuesCollection = 
 	folder.ProcessItems(
@@ -113,7 +123,7 @@ SPQuery query = new SPQuery
 SPListItemCollection col = list.GetItems(query);
 ```
 
-Copyright (C) 2014 NAVERTICA a.s. http://www.navertica.com 
+Copyright (C) 2015 NAVERTICA a.s. http://www.navertica.com 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation; either version 2 of the License, or
