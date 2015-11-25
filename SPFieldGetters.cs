@@ -78,7 +78,7 @@ namespace Navertica.SharePoint.Extensions
 
         private static DateTime? GetDateTime(this SPField fld, object value)
         {
-            if (value is DateTime) return (DateTime?)value;
+            if (value is DateTime) return (DateTime?) value;
 
             DateTime res;
             DateTime.TryParse(value.ToString(), out res);
@@ -106,7 +106,7 @@ namespace Navertica.SharePoint.Extensions
                     }
                 }
             }
-           
+
             return date;
         }
 
@@ -137,12 +137,39 @@ namespace Navertica.SharePoint.Extensions
         {
             if (value is SPFieldLookupValue) return value;
 
+            #region Special Cases
+
+            if (value.ToString().Contains('/')) return value; //can this value /Lists/ListName/2_.000 and other variants of url
+
+            if (fld.InternalName == "Created_x0020_Date" || fld.InternalName == "Last_x0020_Modified")
+            {
+                return GetDateTime(fld, value);
+            }
+
+            if (fld.InternalName == "UniqueId" || fld.InternalName == "ScopeId")
+            {
+                return new Guid(value.ToString());
+            }
+
+            if (fld.InternalName == "FSObjType" ||
+                fld.InternalName == "SortBehavior" ||
+                fld.InternalName == "SyncClientId" ||
+                fld.InternalName == "ProgId" ||
+                fld.InternalName == "ItemChildCount" ||
+                fld.InternalName == "MetaInfo" ||
+                fld.InternalName == "FolderChildCount")
+            {
+                return value;
+            }
+
+            #endregion
+
             var collection = value as SPFieldLookupValueCollection;
             if (collection != null)
             {
                 if (collection.Count == 0) return null;
 
-                return singleValueOnly ? (object)collection[0] : collection;
+                return singleValueOnly ? (object) collection[0] : collection;
             }
 
             string strValue = value.ToString();
@@ -152,7 +179,7 @@ namespace Navertica.SharePoint.Extensions
             if (fld.AllowMultipleValues)
             {
                 collection = new SPFieldLookupValueCollection(strValue);
-                return singleValueOnly ? (object)collection[0] : collection;
+                return singleValueOnly ? (object) collection[0] : collection;
             }
 
             return new SPFieldLookupValue(strValue);
@@ -201,13 +228,12 @@ namespace Navertica.SharePoint.Extensions
         {
             if (value == null) return 0;
 
-            //TODO
-            return null;
+            return value.ToDouble();
         }
 
         public static SPFieldUrlValue Get(this SPFieldUrl fld, object value)
         {
-            if (value is SPFieldUrlValue) return (SPFieldUrlValue)value;
+            if (value is SPFieldUrlValue) return (SPFieldUrlValue) value;
 
             return new SPFieldUrlValue(value.ToString());
         }
@@ -237,7 +263,7 @@ namespace Navertica.SharePoint.Extensions
                 {
                     if (fld.AllowMultipleValues)
                     {
-                        return singleValueOnly ? (object)principals[0] : principals;
+                        return singleValueOnly ? (object) principals[0] : principals;
                     }
                     return principals[0];
                 }
@@ -246,7 +272,7 @@ namespace Navertica.SharePoint.Extensions
                     List<SPUser> users = fld.ParentList.ParentWeb.GetSPUsers(principals);
                     if (fld.AllowMultipleValues)
                     {
-                        return singleValueOnly ? (object)users[0] : users;
+                        return singleValueOnly ? (object) users[0] : users;
                     }
                     return users[0];
                 }
@@ -283,9 +309,9 @@ namespace Navertica.SharePoint.Extensions
 
             switch (intValue)
             {
-                //http://geekswithblogs.net/simonh/archive/2013/04/12/sharepoint-2010-workflow-status-values.aspx
+                    //http://geekswithblogs.net/simonh/archive/2013/04/12/sharepoint-2010-workflow-status-values.aspx
 
-                /*
+                    /*
             // - nejak tyto statusy chybi
             • Canceled = 15
             • Approved = 16
