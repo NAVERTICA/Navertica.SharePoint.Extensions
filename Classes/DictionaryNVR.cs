@@ -1,4 +1,4 @@
-﻿/*  Copyright (C) 2014 NAVERTICA a.s. http://www.navertica.com 
+﻿/*  Copyright (C) 2014 NAVERTICA a.s. http://www.navertica.com
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -15,6 +15,7 @@
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.  */
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -27,25 +28,17 @@ namespace Navertica.SharePoint
     {
         public DictionaryNVR() {}
 
-        public DictionaryNVR(IEnumerable<KeyValuePair<string, object>> dict)
+        public DictionaryNVR(IDictionary o)
         {
             if (this == null) throw new NullReferenceException();
-            if (dict == null) throw new NullReferenceException();
 
-            foreach (KeyValuePair<string, object> kvp in dict)
+            //if (o.GetType().IsGenericType && o.GetType().GetGenericTypeDefinition().IsAssignableFrom(typeof (Dictionary<,>)))
             {
-                Add(kvp.Key, kvp.Value);
-            }
-        }
-
-        public DictionaryNVR(IDictionary<string, object> dict)
-        {
-            if (this == null) throw new NullReferenceException();
-            if (dict == null) throw new NullReferenceException();
-
-            foreach (KeyValuePair<string, object> kvp in dict)
-            {
-                Add(kvp.Key, kvp.Value);
+                // return result;
+                foreach (DictionaryEntry entry in o as IDictionary)
+                {
+                    Add(entry.Key.ToString(), entry.Value);
+                }
             }
         }
 
