@@ -621,8 +621,8 @@ namespace Navertica.SharePoint.Extensions
                     query.ViewFields = viewFields.Replace("<ViewFields>", "").Replace("</ViewFields>", "");
                     query.ViewFieldsOnly = true;
                 }
-                query.ViewAttributes = "Scope=\"RecursiveAll\"";
             }
+            query.ViewAttributes = "Scope=\"RecursiveAll\"";
 
             if (rowLimit != null && rowLimit > 0)
             {
