@@ -743,7 +743,7 @@ namespace Navertica.SharePoint.Extensions
             if (rets.Count == 1) return url;
 
             //can be url in format "/web/LibraryName/"
-            if (!url.Contains("Forms") && !url.Contains("Lists"))
+            if (!url.Contains("Forms") && !url.Contains("Lists") && !url.Contains("_catalogs"))
             {
                 rets.RemoveAll(s => s == "");
                 return rets.Last();
@@ -752,7 +752,7 @@ namespace Navertica.SharePoint.Extensions
             if (listName == "" && url.Contains("Forms/Forms")) listName = "Forms"; //muze se stat
             if (listName == "" && url.Contains("Lists/Lists")) listName = "Lists";
 
-            if (!url.ContainsAny(new[] { "Lists", "Forms" }))
+            if (!url.ContainsAny(new[] { "Lists", "Forms", "_catalogs" }))
             {
                 return rets.Last().Contains(".aspx") ? rets[rets.Count - 2] : rets[rets.Count - 1];
             }
@@ -767,6 +767,11 @@ namespace Navertica.SharePoint.Extensions
                 if (rets[i] == "Forms")
                 {
                     listName = rets[i - 1];
+                    break;
+                }
+                if (rets[i] == "_catalogs")
+                {
+                    listName = rets[i + 1];
                     break;
                 }
             }
@@ -839,21 +844,6 @@ namespace Navertica.SharePoint.Extensions
         }
 
         #region Process Functions
-
-        /// <summary>
-        /// Proccess all items including all folders and subfolders and all items within
-        /// </summary>
-        /// <param name="list"></param>
-        /// <param name="func"></param>
-        /// <returns></returns>
-        public static ICollection<object> ProcessAllItems(this SPList list, Func<SPListItem, object> func)
-        {
-            if (list == null) throw new ArgumentNullException("list");
-            if (func == null) throw new ArgumentNullException("func");
-
-            return list.RootFolder.ProcessAllItems(func);
-        }
-
         /// <summary>
         /// Executes function on items returned for given querystring, returns a list of values returned by the function
         /// </summary>
