@@ -193,26 +193,26 @@ namespace Navertica.SharePoint.Extensions
         /// Workhorse method, in case of exception the exception will be returned as the result
         /// </summary>
         /// <param name="value"></param>
-        /// <param name="field"></param>
+        /// <param name="fld"></param>
         /// <param name="singleValueOnly">in case of multi-value fields (users, lookups) set this to true if you want only the first value</param>
         /// <returns></returns>
-        private static object Get(object value, SPField field, bool singleValueOnly = false)
+        private static object Get(object value, SPField fld, bool singleValueOnly = false)
         {
             if (value == null) 
             {
-                if (field.GetType() == typeof (SPFieldBoolean)) return false;
+                if (fld.GetType() == typeof (SPFieldBoolean)) return false;
                 return null;
             }
 
-            if (field.GetType() == typeof (SPField) && field.Type == SPFieldType.Counter) return value.ToInt();
+            if (fld.GetType() == typeof (SPField) && fld.Type == SPFieldType.Counter) return value.ToInt();
 
-            if (field.InternalName == "ContentTypeId")
+            if (fld.InternalName == "ContentTypeId")
             {
                 SPContentTypeId ctid = new SPContentTypeId(value.ToString());
                 return ctid;
             }
 
-            if (field.GetType() == typeof (SPFieldText) || field.GetType() == typeof (SPFieldMultiLineText))
+            if (fld.GetType() == typeof (SPFieldText) || fld.GetType() == typeof (SPFieldMultiLineText))
             {
                 return value.ToString();
             }
@@ -220,11 +220,11 @@ namespace Navertica.SharePoint.Extensions
             try
             {
                 //Get specific type of field
-                Type t = field.GetType().UnderlyingSystemType;
+                Type t = fld.GetType().UnderlyingSystemType;
                 List<object> pars = new List<object>();
 
                 //Try to load Get method from Custom Field
-                MethodInfo method = field.GetType().GetMethod("Get");
+                MethodInfo method = fld.GetType().GetMethod("Get");
                 if (method != null)
                 {
                     try
@@ -232,7 +232,7 @@ namespace Navertica.SharePoint.Extensions
                         pars.Add(value);
                         if (singleValueOnly) pars.Add(true);
 
-                        object r = method.Invoke(field, pars.ToArray());
+                        object r = method.Invoke(fld, pars.ToArray());
                         return r;
                     }
                     catch (Exception exc)
@@ -245,7 +245,7 @@ namespace Navertica.SharePoint.Extensions
                 method = t.GetExtensionMethod("Get");
                 if (method != null)
                 {
-                    pars.Add(field);
+                    pars.Add(fld);
                     pars.Add(value);
                     if (singleValueOnly) pars.Add(true);
 
