@@ -241,5 +241,29 @@ namespace Navertica.SharePoint.Extensions
                 return false;
             }
         }
+
+        public static string GetLookupValue(this SPFieldLookupValue lookup)
+        {
+            if (lookup == null) return null;
+            return lookup.LookupValue;
+        }
+
+        public static string[] GetLookupValues(this SPFieldLookupValueCollection lookups)
+        {
+            if (lookups == null) return null;
+            return lookups.Select(v => v.LookupValue).ToArray();
+        }
+
+        public static int GetLookupIndex(this SPFieldLookupValue lookup)
+        {
+            if (lookup == null) return -1;
+            return lookup.LookupId;
+        }
+
+        public static int[] GetLookupIndexes(this SPFieldLookupValueCollection lookups)
+        {
+            if (lookups == null) return null;
+            return lookups.Select(v => v.LookupId).ToArray();
+        }
     }
 }
